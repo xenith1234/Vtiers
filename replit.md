@@ -55,7 +55,7 @@ A premium Minecraft PvP tier list website with cyan+black glassmorphism theme, a
 ## Admin Credentials
 
 - Email: `admin@versustiers.gg`
-- Password: `admin123`
+- Password: `versustiers_admin123`
 
 ## User preferences
 
