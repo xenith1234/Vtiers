@@ -5,6 +5,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { CloudBackground } from "@/components/clouds";
 import { TierBadge } from "@/components/tier-badge";
+import { MinecraftIcon } from "@/components/ui/minecraft-icon";
 import { useGetSiteStats, useGetTopPlayers, useListGamemodes, useListAnnouncements } from "@workspace/api-client-react";
 
 const TIER_ORDER = ["HT5", "HT4", "HT3", "HT2", "HT1", "LT5", "LT4", "LT3", "LT2", "LT1", "UR"];
@@ -253,7 +254,7 @@ export default function HomePage() {
                   >
                     <Link href={`/leaderboard?gamemode=${gm.id}`}>
                       <div className="rounded-xl border border-cyan-500/10 bg-black/40 p-4 text-center hover:border-cyan-500/30 hover:bg-black/60 transition-all cursor-pointer group">
-                        <div className="text-2xl mb-2">{gm.icon || "⚔️"}</div>
+                        <div className="flex justify-center mb-2"><MinecraftIcon name={gm.name} size={32} /></div>
                         <div className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors truncate">{gm.name}</div>
                         <div className="text-xs text-gray-600 mt-1">{gm.playerCount} players</div>
                       </div>
@@ -279,20 +280,20 @@ export default function HomePage() {
             <div className="relative rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 via-black/60 to-black/60 p-10 text-center overflow-hidden">
               <div className="absolute inset-0 bg-cyan-500/5 blur-3xl" />
               <div className="relative z-10">
-                <div className="text-4xl mb-4">⚔️</div>
+                <div className="flex justify-center mb-4"><MinecraftIcon name="sword" size={40} /></div>
                 <h2 className="text-3xl font-black text-white mb-3">Ready to get ranked?</h2>
                 <p className="text-gray-400 mb-6 max-w-md mx-auto text-sm">Join the VERSUS TIERS community and prove your skill across all PvP gamemodes.</p>
                 <div className="flex items-center justify-center gap-3 flex-wrap">
-                  <a href="https://discord.gg/versustiers" target="_blank" rel="noopener noreferrer">
+                  <Link href="/apply">
                     <button className="flex items-center gap-2 px-6 py-3 bg-cyan-500 text-black font-bold rounded-xl hover:bg-cyan-400 transition-all shadow-lg shadow-cyan-500/25">
+                      Apply for a Rank <ArrowRight size={16} />
+                    </button>
+                  </Link>
+                  <a href="https://discord.gg/versustiers" target="_blank" rel="noopener noreferrer">
+                    <button className="flex items-center gap-2 px-6 py-3 border border-white/10 text-white font-bold rounded-xl hover:border-white/20 hover:bg-white/5 transition-all">
                       Join Discord <ExternalLink size={16} />
                     </button>
                   </a>
-                  <Link href="/leaderboard">
-                    <button className="flex items-center gap-2 px-6 py-3 border border-white/10 text-white font-bold rounded-xl hover:border-white/20 hover:bg-white/5 transition-all">
-                      Browse Rankings <ArrowRight size={16} />
-                    </button>
-                  </Link>
                 </div>
               </div>
             </div>

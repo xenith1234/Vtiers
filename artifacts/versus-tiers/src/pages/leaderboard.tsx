@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, SlidersHorizontal, Trophy } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { CloudBackground } from "@/components/clouds";
 import { PlayerCard } from "@/components/player-card";
 import { TierBadge } from "@/components/tier-badge";
+import { MinecraftIcon } from "@/components/ui/minecraft-icon";
 import { useListGamemodes, useListRankings, getListRankingsQueryKey } from "@workspace/api-client-react";
 
 const TIERS = ["", "HT5", "HT4", "HT3", "HT2", "HT1", "LT5", "LT4", "LT3", "LT2", "LT1", "UR"];
@@ -62,26 +63,33 @@ export default function LeaderboardPage() {
             <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
               <button
                 onClick={() => { setSelectedGamemodeId(undefined); setPage(1); }}
-                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all border ${
+                className={`flex-shrink-0 flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl text-xs font-bold transition-all border ${
                   !selectedGamemodeId
                     ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400"
                     : "border-white/10 text-gray-400 hover:border-white/20 hover:text-white bg-white/2"
                 }`}
               >
-                🏆 Overall
+                <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+                  <Trophy size={16} className="text-yellow-400" />
+                </div>
+                OVERALL
               </button>
               {gamemodes.map(gm => (
                 <button
                   key={gm.id}
                   onClick={() => { setSelectedGamemodeId(gm.id); setPage(1); }}
-                  className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all border ${
+                  className={`flex-shrink-0 flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl text-xs font-bold transition-all border ${
                     selectedGamemodeId === gm.id
                       ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400"
                       : "border-white/10 text-gray-400 hover:border-white/20 hover:text-white bg-white/2"
                   }`}
                 >
-                  <span>{gm.icon || "⚔️"}</span>
-                  <span>{gm.name}</span>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                    selectedGamemodeId === gm.id ? "bg-cyan-500/20 border border-cyan-500/20" : "bg-white/5 border border-white/5"
+                  }`}>
+                    <MinecraftIcon name={gm.name} size={20} />
+                  </div>
+                  <span className="uppercase tracking-wide">{gm.name}</span>
                 </button>
               ))}
             </div>

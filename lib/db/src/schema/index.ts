@@ -5,3 +5,4 @@ export * from "./rankings";
 export * from "./badges";
 export * from "./settings";
 export * from "./api-keys";
+export * from "./applications";

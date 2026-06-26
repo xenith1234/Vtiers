@@ -3,11 +3,12 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth-context";
 import {
   LayoutDashboard, Users, Sword, Trophy, Award, Settings, Megaphone, LogOut,
-  ChevronRight, Menu, X, Key, Shield
+  ChevronRight, Menu, X, Key, Shield, ClipboardList
 } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/applications", label: "Applications", icon: ClipboardList },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/players", label: "Players", icon: Trophy },
   { href: "/admin/gamemodes", label: "Gamemodes", icon: Sword },
