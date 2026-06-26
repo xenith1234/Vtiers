@@ -5,6 +5,7 @@ import playersRouter from "./players";
 import gamemodesRouter from "./gamemodes";
 import rankingsRouter from "./rankings";
 import miscRouter from "./misc";
+import botRouter from "./bot";
 
 const router: IRouter = Router();
 
@@ -13,6 +14,7 @@ router.use("/auth", authRouter);
 router.use("/players", playersRouter);
 router.use("/gamemodes", gamemodesRouter);
 router.use("/rankings", rankingsRouter);
+router.use(botRouter);
 router.use(miscRouter);
 
 export default router;

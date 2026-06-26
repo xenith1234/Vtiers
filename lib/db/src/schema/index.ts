@@ -4,3 +4,4 @@ export * from "./gamemodes";
 export * from "./rankings";
 export * from "./badges";
 export * from "./settings";
+export * from "./api-keys";
