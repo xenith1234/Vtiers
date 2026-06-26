@@ -1,0 +1,3 @@
+- [Auth setup](auth-setup.md) — HMAC-SHA256 token (not JWT lib); password: SHA256+static salt; token in localStorage as `vt_token`; use `setAuthTokenGetter()` to inject it into the API client.
+- [Express param types](express-params.md) — Express 5 route params typed as `string | string[]`; always cast with `String(req.params.id)` before using with Drizzle.
+- [Seed script](seed-script.md) — scripts package needs drizzle-orm as a direct dependency (not just transitive via @workspace/db) for tsx to resolve it.

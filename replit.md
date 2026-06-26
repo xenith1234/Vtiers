@@ -1,45 +1,71 @@
-# [Project name]
+# VERSUS TIERS
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A premium Minecraft PvP tier list website with cyan+black glassmorphism theme, animated cloud background, and full backend.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
+- `pnpm --filter @workspace/versus-tiers run dev` — run the frontend (port 24053)
 - `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/scripts run seed` — seed the database with sample data
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks/schemas
+- Required env: `DATABASE_URL`, `SESSION_SECRET`
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
+- Frontend: React + Vite, Tailwind CSS v4, Framer Motion, Wouter, React Query
+- API: Express 5 on `/api` path
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- API codegen: Orval (from OpenAPI spec → React Query hooks)
+- Auth: HMAC-SHA256 token (stored in localStorage as `vt_token`)
+- Password hashing: SHA256 + static salt `vt_salt_2024`
+- Minecraft avatars: `https://mc-heads.net/avatar/{username}/64`
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/db/src/schema/` — Drizzle DB schema (users, players, gamemodes, rankings, badges, settings, announcements, activity_logs)
+- `lib/api-spec/openapi.yaml` — OpenAPI spec (source of truth for API contracts)
+- `lib/api-client-react/src/generated/` — auto-generated React Query hooks + Zod schemas
+- `artifacts/api-server/src/routes/` — Express route handlers
+- `artifacts/api-server/src/middlewares/auth.ts` — JWT-like auth middleware
+- `artifacts/versus-tiers/src/pages/` — all page components
+- `artifacts/versus-tiers/src/components/` — shared UI components
+- `artifacts/versus-tiers/src/lib/auth-context.tsx` — auth context + provider
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Contract-first API: OpenAPI spec → Orval codegen → React Query hooks. Never call fetch directly.
+- Auth token stored in localStorage under `vt_token`, injected via `setAuthTokenGetter()` from the API client.
+- Tier system: HT5 > HT4 > HT3 > HT2 > HT1 > LT5 > LT4 > LT3 > LT2 > LT1 > UR
+- All routes served through the shared proxy: `/api` → api-server (port 8080), `/` → frontend (port 24053)
+- Password hashing: SHA256 with static salt (not bcrypt — no bcrypt installed in env)
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Public homepage with hero, animated clouds, stats bar, top players, gamemode grid
+- Leaderboard with gamemode tabs, tier/sort filters, paginated rankings
+- Player profile pages with skin display, badge showcase, per-gamemode stats
+- Search page with debounced search + tier filter
+- Auth: login, register, forgot-password
+- Admin panel: dashboard (stats + activity + tier distribution), users, players, gamemodes, rankings, badges, settings, announcements management
+
+## Admin Credentials
+
+- Email: `admin@versustiers.gg`
+- Password: `admin123`
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Cyan+black glassmorphism aesthetic
+- Dark theme only
+- Space Mono / Inter fonts
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Always run `pnpm --filter @workspace/api-spec run codegen` after changing `openapi.yaml`
+- The API server path is `/api` — all routes must be prefixed accordingly
+- `setAuthTokenGetter()` must be called in `main.tsx` before the app renders (done)
+- Express route params typed as `string | string[]` — always cast with `String()` before passing to Drizzle

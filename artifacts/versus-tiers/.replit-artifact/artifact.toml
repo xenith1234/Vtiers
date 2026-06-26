@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "VERSUS TIERS"
+version = "1.0.0"
+id = "artifacts/versus-tiers"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24053
+
+[services.development]
+run = "pnpm --filter @workspace/versus-tiers run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/versus-tiers", "run", "build" ]
+publicDir = "artifacts/versus-tiers/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24053"
+BASE_PATH = "/"
