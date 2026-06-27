@@ -1,1 +1,18 @@
-{}
+{
+  "sword": [
+    {
+      "userId": "1515422829271711825",
+      "minecraftUsername": "STILL_UR_AYESHA",
+      "gamemode": "sword",
+      "addedAt": "2026-06-27T11:06:59.045Z"
+    }
+  ],
+  "axe": [
+    {
+      "userId": "1515422829271711825",
+      "minecraftUsername": "STILL_UR_AYESHA",
+      "gamemode": "axe",
+      "addedAt": "2026-06-27T11:14:42.335Z"
+    }
+  ]
+}

@@ -1,9 +1,11 @@
 import {
   SlashCommandBuilder,
   EmbedBuilder,
+  MessageFlags,
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { fetchProfile, type PlayerProfile } from "../lib/api.js";
+import { getVerified } from "../lib/storage.js";
 import { CYAN } from "./panel.js";
 
 const TIER_COLORS: Record<string, number> = {
@@ -36,7 +38,6 @@ function getGamemodeEmoji(name: string): string {
 function buildProfileEmbed(profile: PlayerProfile): EmbedBuilder {
   const color = TIER_COLORS[profile.overallTier] ?? CYAN;
 
-  // Build gamemode grid (3 per row max)
   let tiersGrid = "";
   if (profile.rankings.length > 0) {
     const sorted = [...profile.rankings].sort((a, b) => {
@@ -80,12 +81,36 @@ export const data = new SlashCommandBuilder()
   .setDescription("View a player's VERSUS TIERS profile and tier rankings")
   .addStringOption(opt =>
     opt.setName("username")
-      .setDescription("Minecraft username to look up")
-      .setRequired(true)
+      .setDescription("Minecraft username to look up (leave blank to view your own verified profile)")
+      .setRequired(false)
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  const username = interaction.options.getString("username", true);
+  let username = interaction.options.getString("username");
+
+  // If no username provided, fall back to the user's verified Minecraft profile
+  if (!username) {
+    const verified = getVerified(interaction.user.id);
+    if (!verified) {
+      await interaction.reply({
+        flags: MessageFlags.Ephemeral,
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0xFF9900)
+            .setTitle("⚠️  No Username Provided")
+            .setDescription(
+              "You haven't verified a Minecraft profile yet.\n\n" +
+              "Either:\n" +
+              "• Provide a username: `/profile username:YourName`\n" +
+              "• Verify your profile first via the testing panel."
+            ),
+        ],
+      });
+      return;
+    }
+    username = verified.minecraftUsername;
+  }
+
   await interaction.deferReply();
 
   try {

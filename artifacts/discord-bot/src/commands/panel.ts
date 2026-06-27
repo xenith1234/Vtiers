@@ -10,12 +10,16 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
   PermissionFlagsBits,
+  ChannelType,
+  MessageFlags,
   type ChatInputCommandInteraction,
   type ButtonInteraction,
   type StringSelectMenuInteraction,
   type ModalSubmitInteraction,
+  type TextChannel,
 } from "discord.js";
 import { getVerified, setVerified, addToWaitlist, isOnCooldown, getCooldownRemaining } from "../lib/storage.js";
+import { TESTER_ROLE_BY_GAMEMODE, ALL_TESTER_ROLE_IDS } from "../lib/roles.js";
 
 export const CYAN = 0x00D2FF;
 
@@ -56,7 +60,7 @@ function buildPanelEmbed() {
       "**How to get tested:**\n" +
       "> **Step 1** — Click **Verify Profile** and enter your Minecraft username, region, and account type.\n" +
       "> **Step 2** — Click the gamemode button you want to be tested in to join the waitlist.\n" +
-      "> **Step 3** — Wait for a tester to ping you. Keep your **DMs open**!\n\n" +
+      "> **Step 3** — A private channel will be created for you and a tester will reach out there.\n\n" +
       "⏰  **5-day cooldown** applies per gamemode after each test.\n" +
       "⚠️  Make sure your profile is verified before joining any waitlist."
     )
@@ -96,7 +100,7 @@ function buildPanelRows() {
 export async function execute(interaction: ChatInputCommandInteraction) {
   const embed = buildPanelEmbed();
   const rows = buildPanelRows();
-  await interaction.reply({ content: "✅ Panel posted!", ephemeral: true });
+  await interaction.reply({ content: "✅ Panel posted!", flags: MessageFlags.Ephemeral });
   const ch = interaction.channel;
   if (ch && ch.isTextBased() && !ch.isThread() && "send" in ch) {
     await (ch as { send: (opts: unknown) => Promise<unknown> }).send({ embeds: [embed], components: rows });
@@ -140,7 +144,7 @@ export async function handleVerifyModal(interaction: ModalSubmitInteraction) {
   const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(regionSelect);
 
   await interaction.reply({
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     embeds: [
       new EmbedBuilder()
         .setColor(CYAN)
@@ -209,14 +213,14 @@ export async function handleAccountSelect(interaction: StringSelectMenuInteracti
   });
 }
 
-// ── Gamemode button → waitlist ────────────────────────────────────────────────
+// ── Gamemode button → create private waitlist channel ─────────────────────────
 export async function handleGamemodeButton(interaction: ButtonInteraction, gamemode: string) {
   const userId = interaction.user.id;
   const profile = getVerified(userId);
 
   if (!profile) {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       embeds: [
         new EmbedBuilder()
           .setColor(0xFF4444)
@@ -230,7 +234,7 @@ export async function handleGamemodeButton(interaction: ButtonInteraction, gamem
   if (isOnCooldown(userId, gamemode)) {
     const remaining = getCooldownRemaining(userId, gamemode);
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       embeds: [
         new EmbedBuilder()
           .setColor(0xFF9900)
@@ -254,19 +258,129 @@ export async function handleGamemodeButton(interaction: ButtonInteraction, gamem
 
   const gmLabel = GAMEMODES.find(g => g.id === gamemode)?.label ?? gamemode.toUpperCase();
 
-  await interaction.reply({
-    ephemeral: true,
-    embeds: [
-      new EmbedBuilder()
-        .setColor(CYAN)
-        .setTitle("✅  Added to Waitlist!")
-        .setDescription(
-          `**${interaction.user.toString()}** has been added to the **${gmLabel}** waitlist!\n\n` +
-          `⏰ A tester will ping you soon.\n` +
-          `📬 Make sure your **DMs are open**.\n\n` +
-          `👤 Playing as: \`${profile.minecraftUsername}\` (${profile.accountType}, ${profile.region})`
-        )
-        .setFooter({ text: "5-day cooldown applies after your test." }),
-    ],
-  });
+  // ── Create private waitlist channel ─────────────────────────────────────────
+  const guild = interaction.guild;
+  if (!guild) {
+    // Fallback: no guild context (shouldn't happen in normal use)
+    await interaction.reply({
+      flags: MessageFlags.Ephemeral,
+      embeds: [
+        new EmbedBuilder()
+          .setColor(CYAN)
+          .setTitle("✅  Added to Waitlist!")
+          .setDescription(
+            `You've been added to the **${gmLabel}** waitlist!\n` +
+            `⏰ A tester will contact you soon.`
+          ),
+      ],
+    });
+    return;
+  }
+
+  // Build safe channel name: lowercase, spaces → hyphens, strip special chars
+  const safeName = profile.minecraftUsername.toLowerCase().replace(/[^a-z0-9_-]/g, "");
+  const channelName = `${safeName}-${gamemode}-waitlist`;
+
+  // Figure out which tester role to ping
+  const specificRoleId = TESTER_ROLE_BY_GAMEMODE[gamemode];
+  const roleMention = specificRoleId
+    ? `<@&${specificRoleId}>`
+    : ALL_TESTER_ROLE_IDS.map(id => `<@&${id}>`).join(" ");
+
+  try {
+    // Build permission overwrites: hidden from everyone, visible to applicant + relevant testers
+    const testerRoleIds = specificRoleId ? [specificRoleId] : ALL_TESTER_ROLE_IDS;
+    const permissionOverwrites: {
+      id: string;
+      allow?: bigint[];
+      deny?: bigint[];
+    }[] = [
+      // Hidden from @everyone by default
+      {
+        id: guild.roles.everyone.id,
+        deny: [PermissionFlagsBits.ViewChannel],
+      },
+      // The applicant can see and chat
+      {
+        id: userId,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ReadMessageHistory,
+        ],
+      },
+      // The tester role(s) for this gamemode can see and respond
+      ...testerRoleIds.map(roleId => ({
+        id: roleId,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ReadMessageHistory,
+          PermissionFlagsBits.ManageMessages,
+        ],
+      })),
+    ];
+
+    const channel = await guild.channels.create({
+      name: channelName,
+      type: ChannelType.GuildText,
+      topic: `Waitlist channel for ${profile.minecraftUsername} — ${gmLabel} test`,
+      permissionOverwrites,
+    }) as TextChannel;
+
+    // Post the waitlist entry + ping testers in the new channel
+    await channel.send({
+      content: roleMention,
+      embeds: [
+        new EmbedBuilder()
+          .setColor(CYAN)
+          .setTitle(`🎮  ${gmLabel} Waitlist Request`)
+          .setDescription(
+            `${interaction.user.toString()} is ready to be tested in **${gmLabel}**!\n\n` +
+            `👤 **Minecraft:** \`${profile.minecraftUsername}\`\n` +
+            `🌐 **Region:** ${profile.region}\n` +
+            `🎮 **Account:** ${profile.accountType} Edition\n\n` +
+            `A tester will reach out here soon. Keep an eye on this channel!`
+          )
+          .setThumbnail(`https://mc-heads.net/avatar/${profile.minecraftUsername}/64`)
+          .setFooter({ text: "VERSUS TIERS  •  This channel is only visible to you." })
+          .setTimestamp(),
+      ],
+    });
+
+    // Confirm to the user with a link to their channel
+    await interaction.reply({
+      flags: MessageFlags.Ephemeral,
+      embeds: [
+        new EmbedBuilder()
+          .setColor(CYAN)
+          .setTitle("✅  Waitlist Channel Created!")
+          .setDescription(
+            `You've been added to the **${gmLabel}** waitlist!\n\n` +
+            `📢 Your private channel: ${channel.toString()}\n` +
+            `⏰ A tester has been notified and will contact you there.\n\n` +
+            `👤 Playing as: \`${profile.minecraftUsername}\` (${profile.accountType}, ${profile.region})\n\n` +
+            `*5-day cooldown applies after your test.*`
+          )
+          .setThumbnail(`https://mc-heads.net/avatar/${profile.minecraftUsername}/64`),
+      ],
+    });
+  } catch (err: unknown) {
+    console.error("Failed to create waitlist channel:", err);
+
+    // Fallback: still acknowledge the waitlist join even if channel creation failed
+    await interaction.reply({
+      flags: MessageFlags.Ephemeral,
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0xFF9900)
+          .setTitle("⚠️  Added to Waitlist (Channel Error)")
+          .setDescription(
+            `You've been added to the **${gmLabel}** waitlist, but the private channel could not be created automatically.\n\n` +
+            `Please make sure the bot has the **Manage Channels** permission in this server.\n\n` +
+            `👤 Playing as: \`${profile.minecraftUsername}\` (${profile.accountType}, ${profile.region})`
+          ),
+      ],
+    });
+  }
 }

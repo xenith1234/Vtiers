@@ -1,11 +1,12 @@
 import {
   SlashCommandBuilder,
   EmbedBuilder,
-  PermissionFlagsBits,
+  MessageFlags,
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { submitTest } from "../lib/api.js";
 import { CYAN } from "./panel.js";
+import { memberHasTesterRole } from "../lib/roles.js";
 
 const TIERS = ["HT1","HT2","HT3","HT4","HT5","LT1","LT2","LT3","LT4","LT5","UR"];
 const GAMEMODES = ["Sword","Axe","NethOP","Pot","Mace","Crystal","UHC","SMP","Spear"];
@@ -19,7 +20,6 @@ const TIER_COLORS: Record<string, number> = {
 export const data = new SlashCommandBuilder()
   .setName("submittest")
   .setDescription("Submit a tier test result and update the leaderboard")
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
   .addStringOption(opt =>
     opt.setName("username")
       .setDescription("Player's Minecraft username")
@@ -50,6 +50,23 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
+  // ── Tester-role gate ─────────────────────────────────────────────────────────
+  if (!memberHasTesterRole(interaction.member as any)) {
+    await interaction.reply({
+      flags: MessageFlags.Ephemeral,
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0xFF4444)
+          .setTitle("❌  Access Denied")
+          .setDescription(
+            "Only **testers** can submit test results.\n\n" +
+            "If you believe this is a mistake, contact a server admin."
+          ),
+      ],
+    });
+    return;
+  }
+
   await interaction.deferReply();
 
   const username    = interaction.options.getString("username", true);

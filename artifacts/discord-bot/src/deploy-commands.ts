@@ -2,6 +2,8 @@ import { REST, Routes } from "discord.js";
 import * as panel from "./commands/panel.js";
 import * as submittest from "./commands/submittest.js";
 import * as profile from "./commands/profile.js";
+import * as waitlist from "./commands/waitlist.js";
+import * as cooldown from "./commands/cooldown.js";
 
 const token    = process.env.DISCORD_BOT_TOKEN;
 const clientId = process.env.DISCORD_CLIENT_ID;
@@ -12,18 +14,16 @@ if (!token || !clientId) {
   process.exit(1);
 }
 
-const commands = [panel.data, submittest.data, profile.data].map(c => c.toJSON());
+const commands = [panel.data, submittest.data, profile.data, waitlist.data, cooldown.data].map(c => c.toJSON());
 const rest = new REST({ version: "10" }).setToken(token);
 
 try {
   console.log(`🔄  Registering ${commands.length} slash commands…`);
 
   if (guildId) {
-    // Guild commands: instant refresh (for testing)
     await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
     console.log(`✅  Registered to guild ${guildId}`);
   } else {
-    // Global commands: up to 1 hour to propagate
     await rest.put(Routes.applicationCommands(clientId), { body: commands });
     console.log("✅  Registered globally (up to 1h to propagate)");
   }

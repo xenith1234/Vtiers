@@ -2,6 +2,8 @@ import { Client, GatewayIntentBits, Events } from "discord.js";
 import * as panelCmd from "./commands/panel.js";
 import * as submittestCmd from "./commands/submittest.js";
 import * as profileCmd from "./commands/profile.js";
+import * as waitlistCmd from "./commands/waitlist.js";
+import * as cooldownCmd from "./commands/cooldown.js";
 import {
   handleVerifyButton,
   handleVerifyModal,
@@ -16,7 +18,12 @@ if (!token) {
   process.exit(1);
 }
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+  ],
+});
 
 // ── Ready ─────────────────────────────────────────────────────────────────────
 client.once(Events.ClientReady, (c) => {
@@ -34,6 +41,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       case "panel":       await panelCmd.execute(interaction).catch(console.error);       break;
       case "submittest":  await submittestCmd.execute(interaction).catch(console.error);  break;
       case "profile":     await profileCmd.execute(interaction).catch(console.error);     break;
+      case "waitlist":    await waitlistCmd.execute(interaction).catch(console.error);    break;
+      case "cooldown":    await cooldownCmd.execute(interaction).catch(console.error);    break;
     }
     return;
   }
