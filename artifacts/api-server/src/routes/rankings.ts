@@ -21,7 +21,8 @@ async function getPlayerBadges(playerIds: number[]) {
   return map;
 }
 
-const TIER_ORDER: Record<string, number> = { HT5: 11, HT4: 10, HT3: 9, HT2: 8, HT1: 7, LT5: 6, LT4: 5, LT3: 4, LT2: 3, LT1: 2, UR: 1 };
+// HT1 is highest: HT1 > HT2 > HT3 > HT4 > HT5 > LT1 > LT2 > LT3 > LT4 > LT5 > UR
+const TIER_ORDER: Record<string, number> = { HT1: 11, HT2: 10, HT3: 9, HT4: 8, HT5: 7, LT1: 6, LT2: 5, LT3: 4, LT4: 3, LT5: 2, UR: 1 };
 
 router.get("/leaderboard", async (req, res) => {
   try {
@@ -77,6 +78,27 @@ router.get("/player/:playerId", async (req, res) => {
   }
 });
 
+async function getGamemodeRankingsForPlayers(playerIds: number[]) {
+  if (playerIds.length === 0) return {};
+  const allGmr = await db
+    .select({
+      playerId: rankingsTable.playerId,
+      gamemodeId: rankingsTable.gamemodeId,
+      gamemodeName: gamemodesTable.name,
+      gamemodeIcon: gamemodesTable.icon,
+      tier: rankingsTable.tier,
+    })
+    .from(rankingsTable)
+    .innerJoin(gamemodesTable, eq(rankingsTable.gamemodeId, gamemodesTable.id))
+    .where(sql`${rankingsTable.playerId} = ANY(${sql.raw(`ARRAY[${playerIds.join(",")}]::int[]`)})`);
+  const map: Record<number, Array<{ gamemodeId: number; gamemodeName: string; gamemodeIcon: string | null; tier: string }>> = {};
+  for (const r of allGmr) {
+    if (!map[r.playerId]) map[r.playerId] = [];
+    map[r.playerId].push({ gamemodeId: r.gamemodeId, gamemodeName: r.gamemodeName, gamemodeIcon: r.gamemodeIcon, tier: r.tier });
+  }
+  return map;
+}
+
 router.get("/", async (req, res) => {
   try {
     const gamemodeId = req.query.gamemodeId ? parseInt(String(req.query.gamemodeId)) : undefined;
@@ -86,10 +108,69 @@ router.get("/", async (req, res) => {
     const sortBy = String(req.query.sortBy || "points");
     const offset = (page - 1) * limit;
 
-    const conditions: any[] = [];
-    if (gamemodeId) conditions.push(eq(rankingsTable.gamemodeId, gamemodeId));
+    // ── OVERALL tab (no gamemodeId): one row per player from players table ──
+    if (!gamemodeId) {
+      const playerConditions: any[] = [];
+      if (tier) playerConditions.push(eq(playersTable.overallTier, tier));
+      const playerWhere = playerConditions.length > 0 ? and(...playerConditions) : undefined;
+
+      const [{ count }] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(playersTable)
+        .where(playerWhere);
+
+      const players = await db
+        .select()
+        .from(playersTable)
+        .where(playerWhere)
+        .orderBy(desc(playersTable.points))
+        .limit(limit)
+        .offset(offset);
+
+      const playerIds = players.map(p => p.id);
+      const [badgesMap, gmRankMap] = await Promise.all([
+        getPlayerBadges(playerIds),
+        getGamemodeRankingsForPlayers(playerIds),
+      ]);
+
+      const rankings = players.map((p, i) => ({
+        id: p.id,
+        player: {
+          id: p.id,
+          minecraftUsername: p.minecraftUsername,
+          uuid: p.uuid,
+          discord: p.discord,
+          country: p.country,
+          countryCode: p.countryCode,
+          skinUrl: p.skinUrl,
+          points: p.points,
+          overallTier: p.overallTier,
+          createdAt: p.createdAt.toISOString(),
+          updatedAt: p.updatedAt.toISOString(),
+          badges: badgesMap[p.id] || [],
+        },
+        gamemodeId: 0,
+        gamemodeName: "Overall",
+        tier: p.overallTier || "UR",
+        points: p.points,
+        winRate: 0,
+        matches: 0,
+        kills: 0,
+        deaths: 0,
+        kdr: 0,
+        rank: offset + i + 1,
+        updatedAt: p.updatedAt.toISOString(),
+        gamemodeRankings: gmRankMap[p.id] || [],
+      }));
+
+      res.json({ rankings, total: Number(count), page, limit });
+      return;
+    }
+
+    // ── SPECIFIC GAMEMODE tab: filter by gamemodeId ──
+    const conditions: any[] = [eq(rankingsTable.gamemodeId, gamemodeId)];
     if (tier) conditions.push(eq(rankingsTable.tier, tier));
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const whereClause = and(...conditions);
 
     const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(rankingsTable).where(whereClause);
 
@@ -136,28 +217,10 @@ router.get("/", async (req, res) => {
       .offset(offset);
 
     const playerIds = [...new Set(rows.map(r => r.playerId))];
-    const badgesMap = await getPlayerBadges(playerIds);
-
-    // Fetch all gamemode rankings for every player in this page
-    let allGamemodeRankings: Array<{ playerId: number; gamemodeId: number; gamemodeName: string; gamemodeIcon: string | null; tier: string }> = [];
-    if (playerIds.length > 0) {
-      allGamemodeRankings = await db
-        .select({
-          playerId: rankingsTable.playerId,
-          gamemodeId: rankingsTable.gamemodeId,
-          gamemodeName: gamemodesTable.name,
-          gamemodeIcon: gamemodesTable.icon,
-          tier: rankingsTable.tier,
-        })
-        .from(rankingsTable)
-        .innerJoin(gamemodesTable, eq(rankingsTable.gamemodeId, gamemodesTable.id))
-        .where(sql`${rankingsTable.playerId} = ANY(${sql.raw(`ARRAY[${playerIds.join(",")}]::int[]`)})`);
-    }
-    const gmRankMap: Record<number, Array<{ gamemodeId: number; gamemodeName: string; gamemodeIcon: string | null; tier: string }>> = {};
-    for (const gmr of allGamemodeRankings) {
-      if (!gmRankMap[gmr.playerId]) gmRankMap[gmr.playerId] = [];
-      gmRankMap[gmr.playerId].push({ gamemodeId: gmr.gamemodeId, gamemodeName: gmr.gamemodeName, gamemodeIcon: gmr.gamemodeIcon, tier: gmr.tier });
-    }
+    const [badgesMap, gmRankMap] = await Promise.all([
+      getPlayerBadges(playerIds),
+      getGamemodeRankingsForPlayers(playerIds),
+    ]);
 
     const rankings = rows.map((r, i) => ({
       id: r.id,

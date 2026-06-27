@@ -8,7 +8,7 @@ import { CloudBackground } from "@/components/clouds";
 import { TierBadge } from "@/components/tier-badge";
 import { useSearch, getSearchQueryKey } from "@workspace/api-client-react";
 
-const TIERS = ["", "HT5", "HT4", "HT3", "HT2", "HT1", "LT5", "LT4", "LT3", "LT2", "LT1", "UR"];
+const TIERS = ["", "HT1", "HT2", "HT3", "HT4", "HT5", "LT1", "LT2", "LT3", "LT4", "LT5", "UR"];
 
 function getFlag(code?: string | null) {
   if (!code || code.length !== 2) return "";

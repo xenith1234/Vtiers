@@ -9,7 +9,7 @@ import { useListRankings, useListGamemodes, useCreateRanking, useUpdateRanking, 
 import { useQueryClient } from "@tanstack/react-query";
 import type { RankingWithPlayer } from "@workspace/api-client-react/src/generated/api.schemas";
 
-const TIERS = ["HT5","HT4","HT3","HT2","HT1","LT5","LT4","LT3","LT2","LT1","UR"];
+const TIERS = ["HT1","HT2","HT3","HT4","HT5","LT1","LT2","LT3","LT4","LT5","UR"];
 
 function RankingModal({ ranking, gamemodeId, onClose }: { ranking?: RankingWithPlayer | null; gamemodeId?: number; onClose: () => void }) {
   const qc = useQueryClient();

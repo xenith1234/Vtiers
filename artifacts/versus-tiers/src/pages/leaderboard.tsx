@@ -10,7 +10,7 @@ import { TierBadge } from "@/components/tier-badge";
 import { MinecraftIcon } from "@/components/ui/minecraft-icon";
 import { useListGamemodes, useListRankings, getListRankingsQueryKey } from "@workspace/api-client-react";
 
-const TIERS = ["", "HT5", "HT4", "HT3", "HT2", "HT1", "LT5", "LT4", "LT3", "LT2", "LT1", "UR"];
+const TIERS = ["", "HT1", "HT2", "HT3", "HT4", "HT5", "LT1", "LT2", "LT3", "LT4", "LT5", "UR"];
 const SORT_OPTIONS = [
   { value: "points", label: "Points" },
   { value: "winRate", label: "Win Rate" },

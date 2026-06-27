@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { TierBadge, getTierColor } from "./tier-badge";
+import { TierBadge, getTierColor, TIER_RANK } from "./tier-badge";
 import { MinecraftIcon } from "./ui/minecraft-icon";
 import type { RankingWithPlayer } from "@workspace/api-client-react/src/generated/api.schemas";
 
@@ -43,13 +43,16 @@ const RANK_NUM_COLOR: Record<number, string> = {
 export function PlayerCard({ ranking, index = 0 }: PlayerCardProps) {
   const rank = ranking.rank ?? index + 1;
   const player = ranking.player;
-  const gmRankings: GamemodeRanking[] = (ranking as any).gamemodeRankings ?? [];
+  const rawGmRankings: GamemodeRanking[] = (ranking as any).gamemodeRankings ?? [];
+
+  // Sort gamemodeRankings by tier value — best tier first (HT1 > HT2 > ... > UR)
+  const gmRankings = [...rawGmRankings].sort(
+    (a, b) => (TIER_RANK[b.tier] ?? 0) - (TIER_RANK[a.tier] ?? 0)
+  );
 
   const borderClass = rank && RANK_BORDER[rank] ? RANK_BORDER[rank] : "border-white/8 hover:border-cyan-500/25";
   const glowClass = rank && RANK_GLOW[rank] ? RANK_GLOW[rank] : "";
   const rankNumColor = rank && RANK_NUM_COLOR[rank] ? RANK_NUM_COLOR[rank] : "text-gray-600";
-
-  const siteTag = "VT";
 
   return (
     <motion.div
@@ -60,14 +63,12 @@ export function PlayerCard({ ranking, index = 0 }: PlayerCardProps) {
       <Link href={`/players/${player.id}`}>
         <div className={`group relative rounded-xl border bg-[#0a0a0f]/80 backdrop-blur-sm transition-all duration-200 hover:bg-[#0d0d14]/90 cursor-pointer overflow-hidden ${borderClass} ${glowClass}`}>
 
-          {/* Top gradient accent for #1 */}
           {rank === 1 && (
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-500/60 to-transparent" />
           )}
 
           <div className="p-4 pb-3">
             <div className="flex items-center gap-3">
-
               {/* Rank */}
               <div className="w-8 flex-shrink-0 text-center">
                 <span className={`text-xl font-black font-mono ${rankNumColor}`}>{rank}.</span>
@@ -92,7 +93,7 @@ export function PlayerCard({ ranking, index = 0 }: PlayerCardProps) {
                 )}
               </div>
 
-              {/* Name + tier + badges */}
+              {/* Name + tier + points */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-white text-base group-hover:text-cyan-300 transition-colors truncate">
@@ -106,7 +107,6 @@ export function PlayerCard({ ranking, index = 0 }: PlayerCardProps) {
                   <TierBadge tier={ranking.tier} size="sm" />
                   <span className="text-gray-500 text-xs font-mono">{ranking.points} pts</span>
                 </div>
-                {/* Player badges (EXPERT, VETERAN etc) */}
                 {player.badges && player.badges.length > 0 && (
                   <div className="flex gap-1 mt-1.5 flex-wrap">
                     {player.badges.slice(0, 3).map((badge: any) => (
@@ -123,16 +123,16 @@ export function PlayerCard({ ranking, index = 0 }: PlayerCardProps) {
                 )}
               </div>
 
-              {/* Site tag right side */}
+              {/* VT site tag */}
               <div className="flex-shrink-0 hidden sm:block">
                 <span className="text-[10px] font-black text-gray-600 bg-white/5 border border-white/5 px-1.5 py-0.5 rounded tracking-widest">
-                  {siteTag}
+                  VT
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Per-gamemode TIERS row */}
+          {/* Per-gamemode TIERS row — sorted best first */}
           {gmRankings.length > 0 && (
             <div className="px-4 pb-3 border-t border-white/5 pt-2.5">
               <div className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">Tiers</div>
@@ -141,7 +141,7 @@ export function PlayerCard({ ranking, index = 0 }: PlayerCardProps) {
                   const tc = getTierColor(gmr.tier);
                   return (
                     <div key={gmr.gamemodeId} className="flex flex-col items-center gap-1 flex-shrink-0">
-                      <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center" title={gmr.gamemodeName}>
                         <MinecraftIcon name={gmr.gamemodeName} size={18} />
                       </div>
                       <span className={`text-[9px] font-black font-mono px-1 py-0.5 rounded border ${tc.bg} ${tc.text} ${tc.border}`}>

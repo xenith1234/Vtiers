@@ -8,12 +8,13 @@ import { TierBadge } from "@/components/tier-badge";
 import { MinecraftIcon } from "@/components/ui/minecraft-icon";
 import { useGetSiteStats, useGetTopPlayers, useListGamemodes, useListAnnouncements } from "@workspace/api-client-react";
 
-const TIER_ORDER = ["HT5", "HT4", "HT3", "HT2", "HT1", "LT5", "LT4", "LT3", "LT2", "LT1", "UR"];
+// HT1 is highest: HT1 > HT2 > HT3 > HT4 > HT5 > LT1 > LT2 > LT3 > LT4 > LT5 > UR
+const TIER_ORDER = ["HT1", "HT2", "HT3", "HT4", "HT5", "LT1", "LT2", "LT3", "LT4", "LT5", "UR"];
 const TIER_COLORS: Record<string, string> = {
-  HT5: "text-red-400", HT4: "text-orange-400", HT3: "text-yellow-400",
-  HT2: "text-lime-400", HT1: "text-green-400",
-  LT5: "text-teal-400", LT4: "text-cyan-400", LT3: "text-blue-400",
-  LT2: "text-violet-400", LT1: "text-purple-400", UR: "text-gray-400",
+  HT1: "text-yellow-400", HT2: "text-yellow-300",
+  HT3: "text-cyan-400",  HT4: "text-cyan-300", HT5: "text-cyan-200",
+  LT1: "text-purple-400", LT2: "text-purple-300", LT3: "text-blue-400",
+  LT4: "text-gray-400", LT5: "text-gray-500", UR: "text-gray-600",
 };
 
 function StatTicker({ label, value, icon: Icon }: { label: string; value: number | string; icon: any }) {
@@ -33,11 +34,11 @@ function StatTicker({ label, value, icon: Icon }: { label: string; value: number
 function TierGuideRow({ tier }: { tier: string }) {
   const color = TIER_COLORS[tier] ?? "text-gray-400";
   const labels: Record<string, string> = {
-    HT5: "Top 0.1% — The absolute elite", HT4: "Top 0.5% — Near god-tier",
-    HT3: "Top 1% — Exceptional", HT2: "Top 2% — Very high skill",
-    HT1: "Top 5% — High tier", LT5: "Top 10% — Above average",
-    LT4: "Top 20% — Solid player", LT3: "Top 35% — Mid-high",
-    LT2: "Top 50% — Average", LT1: "Below average", UR: "Unranked",
+    HT1: "Top 0.1% — The absolute elite", HT2: "Top 0.5% — Near god-tier",
+    HT3: "Top 1% — Exceptional", HT4: "Top 2% — Very high skill",
+    HT5: "Top 5% — High tier", LT1: "Top 10% — Above average",
+    LT2: "Top 20% — Solid player", LT3: "Top 35% — Mid-high",
+    LT4: "Top 50% — Average", LT5: "Below average", UR: "Unranked",
   };
   return (
     <div className="flex items-center gap-4 py-2.5 border-b border-white/5 last:border-0">
