@@ -249,13 +249,6 @@ export async function handleGamemodeButton(interaction: ButtonInteraction, gamem
     return;
   }
 
-  addToWaitlist({
-    userId,
-    minecraftUsername: profile.minecraftUsername,
-    gamemode,
-    addedAt: new Date().toISOString(),
-  });
-
   const gmLabel = GAMEMODES.find(g => g.id === gamemode)?.label ?? gamemode.toUpperCase();
 
   // ── Create private waitlist channel ─────────────────────────────────────────
@@ -277,19 +270,56 @@ export async function handleGamemodeButton(interaction: ButtonInteraction, gamem
     return;
   }
 
-  // Build safe channel name: lowercase, spaces → hyphens, strip special chars
+  // Build safe channel name: lowercase, strip special chars
   const safeName = profile.minecraftUsername.toLowerCase().replace(/[^a-z0-9_-]/g, "");
   const channelName = `${safeName}-${gamemode}-waitlist`;
 
-  // Figure out which tester role to ping
-  const specificRoleId = TESTER_ROLE_BY_GAMEMODE[gamemode];
-  const roleMention = specificRoleId
-    ? `<@&${specificRoleId}>`
-    : ALL_TESTER_ROLE_IDS.map(id => `<@&${id}>`).join(" ");
+  // ── Duplicate guard — fetch fresh channel list to avoid stale cache ─────────
+  await guild.channels.fetch(); // refreshes guild.channels.cache from Discord API
+  const existing = guild.channels.cache.find(ch => ch.name === channelName);
+  if (existing && existing.isTextBased()) {
+    await interaction.reply({
+      flags: MessageFlags.Ephemeral,
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0xFF9900)
+          .setTitle("⚠️  Already on Waitlist")
+          .setDescription(
+            `You already have an open **${gmLabel}** waitlist channel: ${existing.toString()}\n\n` +
+            `A tester will reach out there soon. No new channel was created.`
+          ),
+      ],
+    });
+    return;
+  }
+
+  // Reject unknown gamemodes rather than silently defaulting to a wrong role
+  const testerRoleId = TESTER_ROLE_BY_GAMEMODE[gamemode];
+  if (!testerRoleId) {
+    await interaction.reply({
+      flags: MessageFlags.Ephemeral,
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0xFF4444)
+          .setTitle("❌  Unknown Gamemode")
+          .setDescription(`No tester role configured for **${gmLabel}**. Please contact an admin.`),
+      ],
+    });
+    return;
+  }
+  const roleMention = `<@&${testerRoleId}>`;
+
+  // ── All checks passed — record the waitlist entry now ───────────────────────
+  addToWaitlist({
+    userId,
+    minecraftUsername: profile.minecraftUsername,
+    gamemode,
+    addedAt: new Date().toISOString(),
+  });
 
   try {
-    // Build permission overwrites: hidden from everyone, visible to applicant + relevant testers
-    const testerRoleIds = specificRoleId ? [specificRoleId] : ALL_TESTER_ROLE_IDS;
+    // Build permission overwrites: hidden from everyone, visible to applicant + their tester role
+    const testerRoleIds = [testerRoleId];
     const permissionOverwrites: {
       id: string;
       allow?: bigint[];
