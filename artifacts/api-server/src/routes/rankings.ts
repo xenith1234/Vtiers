@@ -275,7 +275,12 @@ router.post("/", requireAuth, requireModerator, async (req, res) => {
     const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId)).limit(1);
     await db.insert(activityLogsTable).values({ type: "ranking_updated", description: `${player?.minecraftUsername} ranked ${tier} in gamemode ${gamemodeId}`, playerName: player?.minecraftUsername });
     res.status(201).json({ ...ranking, kdr: 0, rank: null, createdAt: ranking.createdAt.toISOString(), updatedAt: ranking.updatedAt.toISOString() });
-  } catch (err) {
+  } catch (err: any) {
+    // Unique constraint violation: player already has a ranking for this gamemode
+    if (err?.code === "23505") {
+      res.status(409).json({ error: "This player already has a ranking for this gamemode. Edit the existing ranking instead." });
+      return;
+    }
     logger.error({ err }, "Create ranking error");
     res.status(500).json({ error: "Internal server error" });
   }

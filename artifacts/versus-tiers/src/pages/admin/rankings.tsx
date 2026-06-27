@@ -15,8 +15,9 @@ function RankingModal({ ranking, gamemodeId, onClose }: { ranking?: RankingWithP
   const qc = useQueryClient();
   const createMutation = useCreateRanking();
   const updateMutation = useUpdateRanking();
-  const { data: players } = useListPlayers({ params: { limit: 100 } });
+  const { data: players } = useListPlayers({ params: { limit: 200 } });
   const { data: gamemodes } = useListGamemodes();
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [form, setForm] = useState({
     playerId: ranking?.player?.id?.toString() || "",
     gamemodeId: (ranking?.gamemodeId || gamemodeId)?.toString() || "",
@@ -29,6 +30,11 @@ function RankingModal({ ranking, gamemodeId, onClose }: { ranking?: RankingWithP
   });
 
   const handleSave = async () => {
+    setSaveError(null);
+    if (!ranking && (!form.playerId || !form.gamemodeId)) {
+      setSaveError("Please select both a player and a gamemode.");
+      return;
+    }
     const data = {
       playerId: parseInt(form.playerId),
       gamemodeId: parseInt(form.gamemodeId),
@@ -39,13 +45,18 @@ function RankingModal({ ranking, gamemodeId, onClose }: { ranking?: RankingWithP
       kills: parseInt(form.kills) || 0,
       deaths: parseInt(form.deaths) || 0,
     };
-    if (ranking) {
-      await updateMutation.mutateAsync({ id: ranking.id, data });
-    } else {
-      await createMutation.mutateAsync({ data });
+    try {
+      if (ranking) {
+        await updateMutation.mutateAsync({ id: ranking.id, data });
+      } else {
+        await createMutation.mutateAsync({ data });
+      }
+      qc.invalidateQueries({ queryKey: getListRankingsQueryKey() });
+      onClose();
+    } catch (err: any) {
+      const msg = err?.data?.error || err?.message || "Failed to save ranking.";
+      setSaveError(msg);
     }
-    qc.invalidateQueries({ queryKey: getListRankingsQueryKey() });
-    onClose();
   };
 
   return (
@@ -101,7 +112,12 @@ function RankingModal({ ranking, gamemodeId, onClose }: { ranking?: RankingWithP
             </div>
           ))}
         </div>
-        <div className="flex gap-3 mt-6">
+        {saveError && (
+          <div className="mt-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+            {saveError}
+          </div>
+        )}
+        <div className="flex gap-3 mt-4">
           <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-white/10 text-gray-400 hover:text-white transition-all text-sm">Cancel</button>
           <button
             onClick={handleSave}
