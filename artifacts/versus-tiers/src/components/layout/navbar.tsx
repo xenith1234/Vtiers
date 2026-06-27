@@ -28,7 +28,6 @@ export function Navbar() {
     { href: "/", label: "Home" },
     { href: "/leaderboard", label: "Leaderboards" },
     { href: "/search", label: "Search" },
-    { href: "/apply", label: "Apply" },
   ];
 
   return (

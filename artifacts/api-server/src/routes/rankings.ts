@@ -138,6 +138,27 @@ router.get("/", async (req, res) => {
     const playerIds = [...new Set(rows.map(r => r.playerId))];
     const badgesMap = await getPlayerBadges(playerIds);
 
+    // Fetch all gamemode rankings for every player in this page
+    let allGamemodeRankings: Array<{ playerId: number; gamemodeId: number; gamemodeName: string; gamemodeIcon: string | null; tier: string }> = [];
+    if (playerIds.length > 0) {
+      allGamemodeRankings = await db
+        .select({
+          playerId: rankingsTable.playerId,
+          gamemodeId: rankingsTable.gamemodeId,
+          gamemodeName: gamemodesTable.name,
+          gamemodeIcon: gamemodesTable.icon,
+          tier: rankingsTable.tier,
+        })
+        .from(rankingsTable)
+        .innerJoin(gamemodesTable, eq(rankingsTable.gamemodeId, gamemodesTable.id))
+        .where(sql`${rankingsTable.playerId} = ANY(${sql.raw(`ARRAY[${playerIds.join(",")}]::int[]`)})`);
+    }
+    const gmRankMap: Record<number, Array<{ gamemodeId: number; gamemodeName: string; gamemodeIcon: string | null; tier: string }>> = {};
+    for (const gmr of allGamemodeRankings) {
+      if (!gmRankMap[gmr.playerId]) gmRankMap[gmr.playerId] = [];
+      gmRankMap[gmr.playerId].push({ gamemodeId: gmr.gamemodeId, gamemodeName: gmr.gamemodeName, gamemodeIcon: gmr.gamemodeIcon, tier: gmr.tier });
+    }
+
     const rankings = rows.map((r, i) => ({
       id: r.id,
       player: {
@@ -165,6 +186,7 @@ router.get("/", async (req, res) => {
       kdr: r.deaths === 0 ? r.kills : Math.round((r.kills / r.deaths) * 100) / 100,
       rank: offset + i + 1,
       updatedAt: r.updatedAt.toISOString(),
+      gamemodeRankings: gmRankMap[r.playerId] || [],
     }));
 
     res.json({ rankings, total: Number(count), page, limit });

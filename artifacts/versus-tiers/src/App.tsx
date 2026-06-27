@@ -20,9 +20,6 @@ import AdminBadgesPage from "@/pages/admin/badges";
 import AdminSettingsPage from "@/pages/admin/settings";
 import AdminAnnouncementsPage from "@/pages/admin/announcements";
 import AdminApiKeysPage from "@/pages/admin/api-keys";
-import AdminApplicationsPage from "@/pages/admin/applications";
-import ApplyPage from "@/pages/apply";
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 30000 },
@@ -48,8 +45,6 @@ function Router() {
       <Route path="/admin/settings" component={AdminSettingsPage} />
       <Route path="/admin/announcements" component={AdminAnnouncementsPage} />
       <Route path="/admin/api-keys" component={AdminApiKeysPage} />
-      <Route path="/admin/applications" component={AdminApplicationsPage} />
-      <Route path="/apply" component={ApplyPage} />
       <Route component={NotFound} />
     </Switch>
   );

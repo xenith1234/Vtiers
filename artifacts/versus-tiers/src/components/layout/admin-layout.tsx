@@ -1,14 +1,13 @@
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth-context";
 import {
   LayoutDashboard, Users, Sword, Trophy, Award, Settings, Megaphone, LogOut,
-  ChevronRight, Menu, X, Key, Shield, ClipboardList
+  ChevronRight, Menu, X, Key, Shield
 } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/applications", label: "Applications", icon: ClipboardList, badge: "applications" },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/players", label: "Players", icon: Trophy },
   { href: "/admin/gamemodes", label: "Gamemodes", icon: Sword },
@@ -19,40 +18,12 @@ const navItems = [
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
 ];
 
-function usePendingApplications() {
-  const [count, setCount] = useState<number>(0);
-
-  const fetchCount = async () => {
-    try {
-      const token = localStorage.getItem("vt_token");
-      if (!token) return;
-      const res = await fetch("/api/admin/applications?status=pending&limit=1", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      setCount(data.total ?? 0);
-    } catch {
-      // silently ignore
-    }
-  };
-
-  useEffect(() => {
-    fetchCount();
-    const interval = setInterval(fetchCount, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return count;
-}
-
-function SidebarContent({ location, user, logout, navigate, onClose, pendingCount }: {
+function SidebarContent({ location, user, logout, navigate, onClose }: {
   location: string;
   user: any;
   logout: () => void;
   navigate: (to: string) => void;
   onClose?: () => void;
-  pendingCount: number;
 }) {
   return (
     <>
@@ -77,7 +48,6 @@ function SidebarContent({ location, user, logout, navigate, onClose, pendingCoun
         {navItems.map(item => {
           const Icon = item.icon;
           const active = location === item.href;
-          const showBadge = item.badge === "applications" && pendingCount > 0;
           return (
             <Link
               key={item.href}
@@ -90,13 +60,8 @@ function SidebarContent({ location, user, logout, navigate, onClose, pendingCoun
               }`}
             >
               <Icon size={16} />
-              <span className="flex-1">{item.label}</span>
-              {showBadge && (
-                <span className="ml-auto flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black leading-none animate-pulse">
-                  {pendingCount > 99 ? "99+" : pendingCount}
-                </span>
-              )}
-              {active && !showBadge && <ChevronRight size={12} className="ml-auto" />}
+              {item.label}
+              {active && <ChevronRight size={12} className="ml-auto" />}
             </Link>
           );
         })}
@@ -128,42 +93,25 @@ export function AdminLayout({ children, title }: { children: ReactNode; title: s
   const [location, navigate] = useLocation();
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const pendingCount = usePendingApplications();
 
   return (
     <div className="min-h-screen bg-black text-white flex">
-      {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-64 border-r border-white/5 bg-black/60 flex-col flex-shrink-0">
-        <SidebarContent location={location} user={user} logout={logout} navigate={navigate} pendingCount={pendingCount} />
+        <SidebarContent location={location} user={user} logout={logout} navigate={navigate} />
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
       {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/70 z-40 lg:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/70 z-40 lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-white/5 bg-black flex flex-col flex-shrink-0 transition-transform duration-200 lg:hidden ${
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       }`}>
-        <SidebarContent
-          location={location}
-          user={user}
-          logout={logout}
-          navigate={navigate}
-          onClose={() => setMobileOpen(false)}
-          pendingCount={pendingCount}
-        />
+        <SidebarContent location={location} user={user} logout={logout} navigate={navigate} onClose={() => setMobileOpen(false)} />
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 overflow-auto min-w-0">
         <div className="border-b border-white/5 px-4 lg:px-8 py-4 bg-black/40 backdrop-blur-sm flex items-center gap-4">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="lg:hidden text-gray-400 hover:text-white transition-colors"
-          >
+          <button onClick={() => setMobileOpen(true)} className="lg:hidden text-gray-400 hover:text-white transition-colors">
             <Menu size={20} />
           </button>
           <h1 className="text-xl font-bold text-white">{title}</h1>
