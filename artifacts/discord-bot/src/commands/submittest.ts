@@ -3,13 +3,13 @@ import {
   EmbedBuilder,
   MessageFlags,
   type ChatInputCommandInteraction,
+  type SlashCommandStringOption,
 } from "discord.js";
 import { submitTest } from "../lib/api.js";
 import { CYAN } from "./panel.js";
 import { memberHasTesterRole } from "../lib/roles.js";
 
 const TIERS = ["HT1","HT2","HT3","HT4","HT5","LT1","LT2","LT3","LT4","LT5","UR"];
-const GAMEMODES = ["Sword","Axe","NethOP","Pot","Mace","Crystal","UHC","SMP","Spear"];
 
 const TIER_COLORS: Record<string, number> = {
   HT1: 0xFFD700, HT2: 0xFFA500, HT3: 0x00D2FF, HT4: 0x00BFFF, HT5: 0x00FFEE,
@@ -17,37 +17,52 @@ const TIER_COLORS: Record<string, number> = {
   UR: 0x444444,
 };
 
-export const data = new SlashCommandBuilder()
-  .setName("submittest")
-  .setDescription("Submit a tier test result and update the leaderboard")
-  .addStringOption(opt =>
-    opt.setName("username")
-      .setDescription("Player's Minecraft username")
-      .setRequired(true)
-  )
-  .addStringOption(opt =>
-    opt.setName("gamemode")
-      .setDescription("Gamemode that was tested")
-      .setRequired(true)
-      .addChoices(...GAMEMODES.map(g => ({ name: g, value: g })))
-  )
-  .addStringOption(opt =>
-    opt.setName("rank_earned")
-      .setDescription("Tier earned in the test")
-      .setRequired(true)
-      .addChoices(...TIERS.map(t => ({ name: t, value: t })))
-  )
-  .addStringOption(opt =>
-    opt.setName("rank_before")
-      .setDescription("Player's tier before the test (optional)")
-      .setRequired(false)
-      .addChoices(...TIERS.map(t => ({ name: t, value: t })), { name: "Unranked", value: "UR" })
-  )
-  .addStringOption(opt =>
-    opt.setName("tester_name")
-      .setDescription("Tester's name (defaults to your Discord name)")
-      .setRequired(false)
-  );
+/**
+ * Build the slash command definition with dynamic gamemode choices.
+ * Called from deploy-commands.ts with choices fetched from the live API,
+ * so the dropdown always reflects whatever gamemodes exist in the admin panel.
+ */
+export function buildData(gamemodeChoices: { name: string; value: string }[]) {
+  return new SlashCommandBuilder()
+    .setName("submittest")
+    .setDescription("Submit a tier test result and update the leaderboard")
+    .addStringOption(opt =>
+      opt.setName("username")
+        .setDescription("Player's Minecraft username")
+        .setRequired(true)
+    )
+    .addStringOption((opt: SlashCommandStringOption) => {
+      opt
+        .setName("gamemode")
+        .setDescription("Gamemode that was tested")
+        .setRequired(true);
+      if (gamemodeChoices.length > 0) {
+        // Discord allows max 25 choices per option
+        opt.addChoices(...gamemodeChoices.slice(0, 25));
+      }
+      return opt;
+    })
+    .addStringOption(opt =>
+      opt.setName("rank_earned")
+        .setDescription("Tier earned in the test")
+        .setRequired(true)
+        .addChoices(...TIERS.map(t => ({ name: t, value: t })))
+    )
+    .addStringOption(opt =>
+      opt.setName("rank_before")
+        .setDescription("Player's tier before the test (optional)")
+        .setRequired(false)
+        .addChoices(...TIERS.map(t => ({ name: t, value: t })), { name: "Unranked", value: "UR" })
+    )
+    .addStringOption(opt =>
+      opt.setName("tester_name")
+        .setDescription("Tester's name (defaults to your Discord name)")
+        .setRequired(false)
+    );
+}
+
+// Static fallback used only if deploy-commands didn't set choices (shouldn't happen)
+export const data = buildData([]);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   // ── Tester-role gate ─────────────────────────────────────────────────────────
