@@ -4,164 +4,296 @@ interface MinecraftIconProps {
   className?: string;
 }
 
-type Pixel = [number, number, string];
+// Each icon is an SVG path-based design matching Minecraft item aesthetics
+// viewBox is 0 0 20 20
 
-const ICONS: Record<string, Pixel[]> = {
-  sword: [
-    [12,0,"#5EE7FF"],[13,0,"#9FF5FF"],
-    [11,1,"#5EE7FF"],[12,1,"#5EE7FF"],
-    [10,2,"#5EE7FF"],[11,2,"#5EE7FF"],
-    [9,3,"#5EE7FF"],[10,3,"#5EE7FF"],
-    [8,4,"#5EE7FF"],[9,4,"#5EE7FF"],
-    [7,5,"#5EE7FF"],[8,5,"#5EE7FF"],
-    [6,5,"#9a9a9a"],[8,3,"#9a9a9a"],
-    [6,6,"#5EE7FF"],[7,6,"#5EE7FF"],
-    [5,7,"#8B5E3C"],[6,7,"#8B5E3C"],
-    [4,8,"#8B5E3C"],[5,8,"#8B5E3C"],
-    [3,9,"#8B5E3C"],
-    [2,10,"#8B5E3C"],
-    [2,11,"#6B4423"],[3,11,"#6B4423"],
-  ],
-  axe: [
-    [8,1,"#888"],[9,1,"#aaa"],[10,1,"#888"],
-    [7,2,"#888"],[8,2,"#ccc"],[9,2,"#ccc"],[10,2,"#aaa"],[11,2,"#888"],
-    [6,3,"#888"],[7,3,"#bbb"],[8,3,"#ccc"],[9,3,"#ccc"],[10,3,"#bbb"],[11,3,"#888"],
-    [6,4,"#888"],[7,4,"#aaa"],[8,4,"#bbb"],[9,4,"#8B5E3C"],[10,4,"#888"],
-    [7,5,"#888"],[8,5,"#8B5E3C"],
-    [7,6,"#8B5E3C"],[8,6,"#8B5E3C"],
-    [6,7,"#8B5E3C"],[7,7,"#6B4423"],
-    [6,8,"#8B5E3C"],
-    [5,9,"#8B5E3C"],
-    [4,10,"#8B5E3C"],[5,10,"#6B4423"],
-    [3,11,"#8B5E3C"],
-    [2,12,"#6B4423"],[3,12,"#8B5E3C"],
-  ],
-  bow: [
-    [10,1,"#8B5E3C"],
-    [9,2,"#8B5E3C"],[11,2,"#aaa"],
-    [8,3,"#8B5E3C"],[11,3,"#aaa"],
-    [7,4,"#8B5E3C"],[11,4,"#aaa"],
-    [7,5,"#8B5E3C"],[10,5,"#aaa"],
-    [7,6,"#8B5E3C"],[10,6,"#aaa"],
-    [7,7,"#8B5E3C"],[9,7,"#aaa"],
-    [8,8,"#8B5E3C"],[9,8,"#aaa"],
-    [9,9,"#8B5E3C"],
-    [6,4,"#6B4423"],[6,5,"#6B4423"],[6,6,"#6B4423"],[6,7,"#6B4423"],
-    [5,4,"#8B5E3C"],[5,8,"#8B5E3C"],
-  ],
-  potion: [
-    [7,2,"#8B5E3C"],[8,2,"#6B4423"],
-    [6,3,"#8B5E3C"],[9,3,"#8B5E3C"],
-    [5,4,"#8B5E3C"],[6,4,"#1E3A5F"],[7,4,"#2A4D7C"],[8,4,"#2A4D7C"],[9,4,"#1E3A5F"],[10,4,"#8B5E3C"],
-    [4,5,"#8B5E3C"],[5,5,"#2A4D7C"],[6,5,"#7B2FE8"],[7,5,"#9B3FFF"],[8,5,"#7B2FE8"],[9,5,"#2A4D7C"],[10,5,"#8B5E3C"],[11,5,"#8B5E3C"],
-    [4,6,"#8B5E3C"],[5,6,"#7B2FE8"],[6,6,"#9B3FFF"],[7,6,"#CF8EFF"],[8,6,"#9B3FFF"],[9,6,"#7B2FE8"],[10,6,"#2A4D7C"],[11,6,"#8B5E3C"],
-    [4,7,"#8B5E3C"],[5,7,"#7B2FE8"],[6,7,"#9B3FFF"],[7,7,"#CF8EFF"],[8,7,"#9B3FFF"],[9,7,"#7B2FE8"],[10,7,"#2A4D7C"],[11,7,"#8B5E3C"],
-    [4,8,"#8B5E3C"],[5,8,"#2A4D7C"],[6,8,"#7B2FE8"],[7,8,"#9B3FFF"],[8,8,"#7B2FE8"],[9,8,"#2A4D7C"],[10,8,"#8B5E3C"],[11,8,"#8B5E3C"],
-    [5,9,"#8B5E3C"],[6,9,"#1E3A5F"],[7,9,"#2A4D7C"],[8,9,"#2A4D7C"],[9,9,"#1E3A5F"],[10,9,"#8B5E3C"],
-    [6,10,"#8B5E3C"],[7,10,"#8B5E3C"],[8,10,"#8B5E3C"],[9,10,"#8B5E3C"],
-  ],
-  crystal: [
-    [7,1,"#E879F9"],[8,1,"#F0ABFC"],
-    [6,2,"#D946EF"],[7,2,"#F0ABFC"],[8,2,"#E879F9"],[9,2,"#D946EF"],
-    [5,3,"#C026D3"],[6,3,"#E879F9"],[7,3,"#F0ABFC"],[8,3,"#E879F9"],[9,3,"#C026D3"],[10,3,"#A21CAF"],
-    [4,4,"#A21CAF"],[5,4,"#D946EF"],[6,4,"#E879F9"],[7,4,"#F0ABFC"],[8,4,"#E879F9"],[9,4,"#D946EF"],[10,4,"#C026D3"],[11,4,"#A21CAF"],
-    [5,5,"#A21CAF"],[6,5,"#C026D3"],[7,5,"#E879F9"],[8,5,"#F0ABFC"],[9,5,"#C026D3"],[10,5,"#A21CAF"],
-    [6,6,"#A21CAF"],[7,6,"#C026D3"],[8,6,"#D946EF"],[9,6,"#A21CAF"],
-    [7,7,"#A21CAF"],[8,7,"#C026D3"],
-    [7,8,"#86198F"],
-    [6,1,"#FFF"],[9,4,"#FFF9"],
-  ],
-  shield: [
-    [5,2,"#888"],[6,2,"#aaa"],[7,2,"#ccc"],[8,2,"#aaa"],[9,2,"#888"],[10,2,"#888"],
-    [4,3,"#888"],[5,3,"#aaa"],[6,3,"#2266CC"],[7,3,"#3377EE"],[8,3,"#2266CC"],[9,3,"#aaa"],[10,3,"#888"],[11,3,"#888"],
-    [4,4,"#888"],[5,4,"#2266CC"],[6,4,"#3377EE"],[7,4,"#5599FF"],[8,4,"#3377EE"],[9,4,"#2266CC"],[10,4,"#aaa"],[11,4,"#888"],
-    [4,5,"#888"],[5,5,"#2266CC"],[6,5,"#ccc"],[7,5,"#fff"],[8,5,"#ccc"],[9,5,"#2266CC"],[10,5,"#888"],[11,5,"#888"],
-    [4,6,"#888"],[5,6,"#1155BB"],[6,6,"#2266CC"],[7,6,"#3377EE"],[8,6,"#2266CC"],[9,6,"#1155BB"],[10,6,"#888"],
-    [5,7,"#888"],[6,7,"#1155BB"],[7,7,"#2266CC"],[8,7,"#1155BB"],[9,7,"#888"],
-    [6,8,"#888"],[7,8,"#1155BB"],[8,8,"#888"],
-    [7,9,"#888"],
-  ],
-  trident: [
-    [8,1,"#5EE7FF"],[9,1,"#9FF5FF"],
-    [6,2,"#5EE7FF"],[7,2,"#5EE7FF"],[8,2,"#9FF5FF"],[9,2,"#5EE7FF"],[10,2,"#5EE7FF"],
-    [6,3,"#5EE7FF"],[7,3,"#9FF5FF"],[8,3,"#5EE7FF"],[9,3,"#5EE7FF"],[10,3,"#5EE7FF"],
-    [7,4,"#5EE7FF"],[8,4,"#5EE7FF"],
-    [7,5,"#5EE7FF"],[8,5,"#5EE7FF"],
-    [7,6,"#9a9a9a"],[8,6,"#9a9a9a"],
-    [7,7,"#9a9a9a"],[8,7,"#9a9a9a"],
-    [7,8,"#9a9a9a"],[8,8,"#9a9a9a"],
-    [7,9,"#9a9a9a"],[8,9,"#9a9a9a"],
-    [7,10,"#9a9a9a"],[8,10,"#9a9a9a"],
-    [7,11,"#9a9a9a"],
-  ],
-  overall: [
-    [5,2,"#FFD700"],[6,2,"#FFD700"],[7,2,"#FFE55C"],[8,2,"#FFD700"],[9,2,"#FFD700"],[10,2,"#FFD700"],
-    [4,3,"#FFD700"],[5,3,"#FFE55C"],[6,3,"#FFE55C"],[7,3,"#FFF0A0"],[8,3,"#FFE55C"],[9,3,"#FFE55C"],[10,3,"#FFD700"],[11,3,"#FFD700"],
-    [4,4,"#FFD700"],[5,4,"#FFE55C"],[6,4,"#FFF0A0"],[7,4,"#FFD700"],[8,4,"#FFE55C"],[9,4,"#FFD700"],[10,4,"#FFD700"],[11,4,"#FFD700"],
-    [4,5,"#FFD700"],[5,5,"#FFE55C"],[6,5,"#FFD700"],[7,5,"#FFE55C"],[8,5,"#FFD700"],[9,5,"#FFD700"],[10,5,"#FFD700"],[11,5,"#FFD700"],
-    [5,6,"#FFD700"],[6,6,"#FFD700"],[7,6,"#FFD700"],[8,6,"#FFD700"],[9,6,"#FFD700"],[10,6,"#FFD700"],
-    [6,7,"#FFD700"],[7,7,"#FFD700"],[8,7,"#FFD700"],[9,7,"#FFD700"],
-    [5,8,"#B8860B"],[6,8,"#B8860B"],[7,8,"#B8860B"],[8,8,"#B8860B"],[9,8,"#B8860B"],[10,8,"#B8860B"],
-    [5,9,"#B8860B"],[6,9,"#D4A017"],[7,9,"#D4A017"],[8,9,"#D4A017"],[9,9,"#D4A017"],[10,9,"#B8860B"],
-    [4,10,"#B8860B"],[5,10,"#D4A017"],[6,10,"#FFD700"],[7,10,"#FFD700"],[8,10,"#FFD700"],[9,10,"#D4A017"],[10,10,"#B8860B"],[11,10,"#B8860B"],
-  ],
-  smp: [
-    [7,1,"#5EE7FF"],[8,1,"#9FF5FF"],
-    [6,2,"#5EE7FF"],[7,2,"#9FF5FF"],[8,2,"#5EE7FF"],[9,2,"#5EE7FF"],
-    [5,3,"#5EE7FF"],[6,3,"#9FF5FF"],[7,3,"#5EE7FF"],[8,3,"#5EE7FF"],[9,3,"#5EE7FF"],
-    [5,4,"#9a9a9a"],[6,4,"#5EE7FF"],[7,4,"#5EE7FF"],[8,4,"#5EE7FF"],
-    [5,5,"#9a9a9a"],[6,5,"#9a9a9a"],
-    [5,6,"#8B5E3C"],[6,6,"#8B5E3C"],
-    [4,7,"#8B5E3C"],[5,7,"#8B5E3C"],[6,7,"#6B4423"],
-    [4,8,"#8B5E3C"],[5,8,"#6B4423"],
-    [3,9,"#8B5E3C"],
-    [3,10,"#6B4423"],[4,10,"#8B5E3C"],
-    [2,11,"#6B4423"],[3,11,"#8B5E3C"],
-  ],
-  default: [
-    [7,2,"#5EE7FF"],[8,2,"#9FF5FF"],
-    [6,3,"#5EE7FF"],[7,3,"#9FF5FF"],[8,3,"#5EE7FF"],[9,3,"#5EE7FF"],
-    [5,4,"#5EE7FF"],[6,4,"#9FF5FF"],[7,4,"#5EE7FF"],[8,4,"#5EE7FF"],[9,4,"#5EE7FF"],
-    [5,5,"#9a9a9a"],[6,5,"#5EE7FF"],[7,5,"#5EE7FF"],[8,5,"#5EE7FF"],
-    [5,6,"#9a9a9a"],[6,6,"#9a9a9a"],
-    [5,7,"#8B5E3C"],[6,7,"#8B5E3C"],
-    [4,8,"#8B5E3C"],[5,8,"#8B5E3C"],[6,8,"#6B4423"],
-    [4,9,"#8B5E3C"],[5,9,"#6B4423"],
-    [3,10,"#8B5E3C"],
-    [3,11,"#6B4423"],[4,11,"#8B5E3C"],
-    [2,12,"#6B4423"],[3,12,"#8B5E3C"],
-  ],
+const ICON_SVGS: Record<string, (size: number) => JSX.Element> = {
+  // Iron Sword — diagonal blade, brown handle
+  sword: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      <rect x="12" y="1" width="3" height="3" fill="#c8c8c8" />
+      <rect x="9"  y="4" width="3" height="3" fill="#d4d4d4" />
+      <rect x="6"  y="7" width="3" height="3" fill="#c0c0c0" />
+      <rect x="3"  y="10" width="3" height="3" fill="#c8c8c8" />
+      {/* guard */}
+      <rect x="5"  y="8"  width="2" height="2" fill="#888" />
+      <rect x="8"  y="5"  width="2" height="2" fill="#999" />
+      {/* handle */}
+      <rect x="1"  y="13" width="2" height="2" fill="#8B5E3C" />
+      <rect x="2"  y="15" width="2" height="2" fill="#7a5230" />
+      <rect x="3"  y="17" width="2" height="2" fill="#6B4423" />
+    </svg>
+  ),
+  // Iron Axe — blade + handle
+  axe: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      <rect x="10" y="1" width="7" height="5" fill="#c0c0c0" />
+      <rect x="8"  y="3" width="3" height="3" fill="#b0b0b0" />
+      <rect x="10" y="6" width="4" height="2" fill="#aaa" />
+      <rect x="11" y="1" width="2" height="2" fill="#ddd" />
+      {/* handle */}
+      <rect x="8"  y="7"  width="2" height="3" fill="#8B5E3C" />
+      <rect x="7"  y="10" width="2" height="3" fill="#7a5230" />
+      <rect x="5"  y="13" width="2" height="3" fill="#8B5E3C" />
+      <rect x="4"  y="16" width="2" height="3" fill="#6B4423" />
+    </svg>
+  ),
+  // Bow
+  bow: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      <rect x="13" y="2"  width="2" height="2" fill="#8B5E3C" />
+      <rect x="13" y="4"  width="2" height="2" fill="#7a5230" />
+      <rect x="13" y="6"  width="2" height="3" fill="#8B5E3C" />
+      <rect x="13" y="9"  width="2" height="3" fill="#7a5230" />
+      <rect x="13" y="12" width="2" height="2" fill="#8B5E3C" />
+      <rect x="13" y="14" width="2" height="2" fill="#7a5230" />
+      {/* string */}
+      <rect x="14" y="3"  width="1" height="1" fill="#ccc" />
+      <rect x="15" y="5"  width="1" height="1" fill="#ccc" />
+      <rect x="16" y="7"  width="1" height="3" fill="#ccc" />
+      <rect x="15" y="11" width="1" height="1" fill="#ccc" />
+      <rect x="14" y="13" width="1" height="1" fill="#ccc" />
+      {/* arrow */}
+      <rect x="3"  y="9"  width="10" height="2" fill="#c8a96e" />
+      <rect x="2"  y="8"  width="2"  height="4" fill="#e55" />
+      <rect x="13" y="9"  width="3"  height="2" fill="#ddd" />
+    </svg>
+  ),
+  // Splash Potion — purple
+  potion: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      {/* neck */}
+      <rect x="7" y="1" width="6" height="2" fill="#8B5E3C" />
+      <rect x="6" y="3" width="8" height="2" fill="#7a5230" />
+      {/* body */}
+      <rect x="4" y="5"  width="12" height="10" rx="4" fill="#7B2FE8" />
+      <rect x="5" y="6"  width="10" height="8"  rx="3" fill="#9B3FFF" />
+      <rect x="6" y="7"  width="4"  height="3"  fill="#CF8EFF" opacity="0.6" />
+      {/* shine */}
+      <rect x="6" y="7" width="2" height="2" fill="#fff" opacity="0.3" />
+      {/* bottom */}
+      <rect x="5" y="15" width="10" height="3" rx="2" fill="#7B2FE8" />
+    </svg>
+  ),
+  // End Crystal — pink/magenta
+  crystal: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      {/* top spike */}
+      <rect x="9"  y="1" width="2" height="3" fill="#F0ABFC" />
+      {/* upper body */}
+      <rect x="7"  y="4" width="6" height="4" fill="#E879F9" />
+      <rect x="5"  y="5" width="10" height="3" fill="#D946EF" />
+      <rect x="8"  y="4" width="4"  height="2" fill="#F5D0FE" />
+      {/* middle */}
+      <rect x="4"  y="8"  width="12" height="4" fill="#C026D3" />
+      <rect x="5"  y="8"  width="10" height="3" fill="#D946EF" />
+      <rect x="7"  y="9"  width="6"  height="2" fill="#E879F9" />
+      {/* lower */}
+      <rect x="5"  y="12" width="10" height="3" fill="#A21CAF" />
+      <rect x="6"  y="12" width="8"  height="2" fill="#C026D3" />
+      {/* base */}
+      <rect x="7"  y="15" width="6" height="3" fill="#86198F" />
+      {/* glow */}
+      <rect x="7"  y="6" width="2" height="2" fill="#fff" opacity="0.4" />
+    </svg>
+  ),
+  // Shield — iron with cross emblem
+  shield: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      <rect x="3"  y="2"  width="14" height="11" rx="2" fill="#2266CC" />
+      <rect x="4"  y="3"  width="12" height="9"  rx="1" fill="#3377EE" />
+      {/* cross */}
+      <rect x="9"  y="4"  width="2" height="7" fill="#fff" />
+      <rect x="6"  y="7"  width="8" height="2" fill="#fff" />
+      {/* bottom point */}
+      <rect x="5"  y="13" width="10" height="3" fill="#2266CC" />
+      <rect x="7"  y="16" width="6"  height="2" fill="#1155BB" />
+      <rect x="9"  y="18" width="2"  height="2" fill="#1155BB" />
+    </svg>
+  ),
+  // Trident
+  trident: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      {/* three prongs */}
+      <rect x="4"  y="1" width="2" height="5" fill="#5EE7FF" />
+      <rect x="9"  y="1" width="2" height="7" fill="#9FF5FF" />
+      <rect x="14" y="1" width="2" height="5" fill="#5EE7FF" />
+      {/* connecting bar */}
+      <rect x="4"  y="5" width="12" height="2" fill="#5EE7FF" />
+      {/* shaft */}
+      <rect x="9" y="7"  width="2" height="12" fill="#9a9a9a" />
+      <rect x="9" y="7"  width="1" height="12" fill="#b0b0b0" />
+    </svg>
+  ),
+  // Trophy (Overall)
+  overall: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      <rect x="4"  y="2"  width="12" height="8" rx="2" fill="#FFD700" />
+      <rect x="5"  y="3"  width="10" height="6" rx="1" fill="#FFE55C" />
+      {/* handles */}
+      <rect x="1"  y="3"  width="3"  height="5" rx="1" fill="#D4A017" />
+      <rect x="16" y="3"  width="3"  height="5" rx="1" fill="#D4A017" />
+      {/* stem */}
+      <rect x="8"  y="10" width="4" height="4" fill="#B8860B" />
+      {/* base */}
+      <rect x="5"  y="14" width="10" height="3" rx="1" fill="#D4A017" />
+      <rect x="4"  y="17" width="12" height="2" fill="#B8860B" />
+      {/* shine */}
+      <rect x="6" y="4" width="3" height="2" fill="#fff" opacity="0.4" />
+    </svg>
+  ),
+  // Diamond sword (for nethpot/nether)
+  nethpot: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      <rect x="12" y="1" width="3" height="3" fill="#55FFFF" />
+      <rect x="9"  y="4" width="3" height="3" fill="#66FFFF" />
+      <rect x="6"  y="7" width="3" height="3" fill="#55FFFF" />
+      <rect x="3"  y="10" width="3" height="3" fill="#44EEFF" />
+      {/* guard */}
+      <rect x="5"  y="8"  width="2" height="2" fill="#44AACC" />
+      <rect x="8"  y="5"  width="2" height="2" fill="#55BBDD" />
+      {/* handle - dark */}
+      <rect x="1"  y="13" width="2" height="2" fill="#333" />
+      <rect x="2"  y="15" width="2" height="2" fill="#222" />
+      <rect x="3"  y="17" width="2" height="2" fill="#111" />
+    </svg>
+  ),
+  // Netherite Sword
+  nethsword: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      <rect x="12" y="1" width="3" height="3" fill="#6B5B73" />
+      <rect x="9"  y="4" width="3" height="3" fill="#7D6B85" />
+      <rect x="6"  y="7" width="3" height="3" fill="#6B5B73" />
+      <rect x="3"  y="10" width="3" height="3" fill="#5C4D64" />
+      <rect x="5"  y="8"  width="2" height="2" fill="#443344" />
+      <rect x="8"  y="5"  width="2" height="2" fill="#554455" />
+      <rect x="1"  y="13" width="2" height="2" fill="#8B5E3C" />
+      <rect x="2"  y="15" width="2" height="2" fill="#7a5230" />
+      <rect x="3"  y="17" width="2" height="2" fill="#6B4423" />
+    </svg>
+  ),
+  // Mace — heavy club
+  mace: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      {/* head */}
+      <rect x="5"  y="1" width="10" height="9" rx="2" fill="#888" />
+      <rect x="6"  y="2" width="8"  height="7" rx="1" fill="#aaa" />
+      {/* spikes */}
+      <rect x="4"  y="3" width="2" height="2" fill="#999" />
+      <rect x="14" y="3" width="2" height="2" fill="#999" />
+      <rect x="4"  y="7" width="2" height="2" fill="#999" />
+      <rect x="14" y="7" width="2" height="2" fill="#999" />
+      <rect x="8"  y="0" width="4" height="2" fill="#999" />
+      {/* handle */}
+      <rect x="9" y="10" width="2" height="9" fill="#8B5E3C" />
+      <rect x="9" y="10" width="1" height="9" fill="#a06840" />
+      {/* pommel */}
+      <rect x="8" y="18" width="4" height="2" fill="#666" />
+    </svg>
+  ),
+  // Heart (SMP / Life)
+  heart: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      <rect x="2"  y="4"  width="4" height="4" fill="#EF4444" />
+      <rect x="6"  y="2"  width="4" height="4" fill="#EF4444" />
+      <rect x="10" y="2"  width="4" height="4" fill="#EF4444" />
+      <rect x="14" y="4"  width="4" height="4" fill="#EF4444" />
+      <rect x="2"  y="8"  width="16" height="4" fill="#EF4444" />
+      <rect x="4"  y="12" width="12" height="4" fill="#EF4444" />
+      <rect x="6"  y="16" width="8"  height="2" fill="#DC2626" />
+      <rect x="8"  y="18" width="4"  height="2" fill="#B91C1C" />
+      {/* shine */}
+      <rect x="4" y="5" width="3" height="2" fill="#FCA5A5" />
+      <rect x="10" y="3" width="2" height="2" fill="#FCA5A5" />
+    </svg>
+  ),
+  // SMP / Pickaxe
+  smp: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      {/* pick head */}
+      <rect x="3"  y="3"  width="12" height="5" rx="1" fill="#5EE7FF" />
+      <rect x="4"  y="4"  width="10" height="3" fill="#9FF5FF" />
+      <rect x="13" y="2"  width="4"  height="3" fill="#5EE7FF" />
+      {/* handle */}
+      <rect x="6"  y="8"  width="2" height="3" fill="#8B5E3C" />
+      <rect x="5"  y="11" width="2" height="3" fill="#7a5230" />
+      <rect x="4"  y="14" width="2" height="3" fill="#8B5E3C" />
+      <rect x="3"  y="17" width="2" height="2" fill="#6B4423" />
+    </svg>
+  ),
+  // Bedfight — bed icon
+  bedfight: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      {/* pillow */}
+      <rect x="2"  y="5"  width="7"  height="6" rx="1" fill="#eee" />
+      <rect x="3"  y="6"  width="5"  height="4" fill="#fff" />
+      {/* blanket */}
+      <rect x="9"  y="5"  width="9"  height="6" rx="1" fill="#3377EE" />
+      <rect x="10" y="6"  width="7"  height="4" fill="#4488FF" />
+      {/* bed frame */}
+      <rect x="1"  y="11" width="18" height="4" rx="1" fill="#8B5E3C" />
+      <rect x="1"  y="4"  width="3"  height="7" rx="1" fill="#7a5230" />
+      <rect x="16" y="4"  width="3"  height="7" rx="1" fill="#7a5230" />
+      {/* feet */}
+      <rect x="1"  y="15" width="3" height="3" fill="#6B4423" />
+      <rect x="16" y="15" width="3" height="3" fill="#6B4423" />
+    </svg>
+  ),
+  // UHC — golden apple
+  uhc: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      {/* stem/leaf */}
+      <rect x="9"  y="1" width="2" height="3" fill="#228B22" />
+      <rect x="11" y="2" width="3" height="2" fill="#32CD32" />
+      {/* apple body */}
+      <rect x="3"  y="4"  width="14" height="12" rx="4" fill="#EF4444" />
+      <rect x="4"  y="5"  width="12" height="10" rx="3" fill="#F87171" />
+      {/* golden shimmer */}
+      <rect x="3"  y="4"  width="14" height="3" rx="2" fill="#FFD700" opacity="0.5" />
+      <rect x="4"  y="5"  width="5"  height="3" fill="#fff" opacity="0.3" />
+      {/* bottom */}
+      <rect x="5"  y="16" width="10" height="2" rx="1" fill="#DC2626" />
+    </svg>
+  ),
+  // Default — diamond
+  default: (s) => (
+    <svg width={s} height={s} viewBox="0 0 20 20" style={{ imageRendering: "pixelated" }}>
+      <rect x="7"  y="2"  width="6" height="2" fill="#5EE7FF" />
+      <rect x="4"  y="4"  width="12" height="4" fill="#5EE7FF" />
+      <rect x="3"  y="4"  width="2"  height="2" fill="#9FF5FF" />
+      <rect x="5"  y="4"  width="10" height="4" fill="#9FF5FF" />
+      <rect x="5"  y="8"  width="10" height="5" fill="#5EE7FF" />
+      <rect x="6"  y="13" width="8"  height="3" fill="#5EE7FF" />
+      <rect x="8"  y="16" width="4"  height="3" fill="#44D4FF" />
+      <rect x="9"  y="19" width="2"  height="1" fill="#33C3FF" />
+      <rect x="6"  y="5"  width="3"  height="2" fill="#fff" opacity="0.4" />
+    </svg>
+  ),
 };
 
 export function getGamemodeIconName(name: string): string {
   const n = name.toLowerCase();
-  if (n.includes("sword") || n.includes("dia sword") || n.includes("neth sword")) return "sword";
+  if (n.includes("overall") || n.includes("all")) return "overall";
+  if (n.includes("neth") && (n.includes("pot") || n.includes("pvp"))) return "nethpot";
+  if (n.includes("neth") && n.includes("sword")) return "nethsword";
+  if (n.includes("neth")) return "nethpot";
+  if (n.includes("mace")) return "mace";
+  if (n.includes("sword") || n.includes("dia sword")) return "sword";
   if (n.includes("axe")) return "axe";
   if (n.includes("bow") || n.includes("arch")) return "bow";
-  if (n.includes("pot") || n.includes("uhc") || n.includes("alch")) return "potion";
-  if (n.includes("cryst") || n.includes("anchor") || n.includes("bed")) return "crystal";
+  if (n.includes("pot") || n.includes("alch") || n.includes("splash")) return "potion";
+  if (n.includes("cryst") || n.includes("anchor") || n.includes("end")) return "crystal";
   if (n.includes("shield") || n.includes("shielding")) return "shield";
   if (n.includes("trid")) return "trident";
-  if (n.includes("overall") || n.includes("all")) return "overall";
-  if (n.includes("smp")) return "smp";
+  if (n.includes("bed") || n.includes("brig")) return "bedfight";
+  if (n.includes("uhc") || n.includes("gap") || n.includes("golden")) return "uhc";
+  if (n.includes("heart") || n.includes("life")) return "heart";
+  if (n.includes("smp") || n.includes("pick") || n.includes("mine")) return "smp";
   return "default";
 }
 
 export function MinecraftIcon({ name, size = 24, className = "" }: MinecraftIconProps) {
   const iconName = getGamemodeIconName(name);
-  const pixels = ICONS[iconName] ?? ICONS.default;
-
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 16 16"
-      className={`pixelated ${className}`}
-      style={{ imageRendering: "pixelated" }}
-    >
-      {pixels.map(([x, y, color], i) => (
-        <rect key={i} x={x} y={y} width={1} height={1} fill={color} />
-      ))}
-    </svg>
-  );
+  const renderFn = ICON_SVGS[iconName] ?? ICON_SVGS.default;
+  return <span className={className}>{renderFn(size)}</span>;
 }
