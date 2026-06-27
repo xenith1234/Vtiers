@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, usersTable, playersTable, gamemodesTable, rankingsTable, badgesTable, settingsTable, announcementsTable, activityLogsTable } from "@workspace/db";
+import { db, usersTable, playersTable, gamemodesTable, rankingsTable, badgesTable, playerBadgesTable, settingsTable, announcementsTable, activityLogsTable } from "@workspace/db";
 import { eq, like, or, sql, desc, ilike, and } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middlewares/auth";
 import { logger } from "../lib/logger";
@@ -46,30 +46,59 @@ router.get("/search", async (req, res) => {
     const q = String(req.query.q || "");
     const country = String(req.query.country || "");
     const tier = String(req.query.tier || "");
-    const gamemode = String(req.query.gamemode || "");
     const discord = String(req.query.discord || "");
 
-    let query = db.select().from(playersTable);
     const conditions: any[] = [];
-
     if (q) conditions.push(ilike(playersTable.minecraftUsername, `%${q}%`));
     if (country) conditions.push(eq(playersTable.country, country));
     if (tier) conditions.push(eq(playersTable.overallTier, tier));
     if (discord) conditions.push(ilike(playersTable.discord, `%${discord}%`));
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const players = await db.select().from(playersTable)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .limit(50);
+    const [players, [{ count }]] = await Promise.all([
+      db.select().from(playersTable).where(where).orderBy(desc(playersTable.points)).limit(50),
+      db.select({ count: sql<number>`count(*)` }).from(playersTable).where(where),
+    ]);
 
-    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(playersTable)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
+    const playerIds = players.map(p => p.id);
+
+    // Fetch real badges for each player
+    let badgesMap: Record<number, any[]> = {};
+    let rankingCountMap: Record<number, number> = {};
+    if (playerIds.length > 0) {
+      const [allBadges, rankingCounts] = await Promise.all([
+        db.select({
+          playerId: playerBadgesTable.playerId,
+          id: badgesTable.id,
+          name: badgesTable.name,
+          icon: badgesTable.icon,
+          description: badgesTable.description,
+          color: badgesTable.color,
+        })
+          .from(playerBadgesTable)
+          .innerJoin(badgesTable, eq(playerBadgesTable.badgeId, badgesTable.id))
+          .where(sql`${playerBadgesTable.playerId} = ANY(${sql.raw(`ARRAY[${playerIds.join(",")}]::int[]`)})`),
+        db.select({ playerId: rankingsTable.playerId, count: sql<number>`count(*)` })
+          .from(rankingsTable)
+          .where(sql`${rankingsTable.playerId} = ANY(${sql.raw(`ARRAY[${playerIds.join(",")}]::int[]`)})`)
+          .groupBy(rankingsTable.playerId),
+      ]);
+      for (const b of allBadges) {
+        if (!badgesMap[b.playerId]) badgesMap[b.playerId] = [];
+        badgesMap[b.playerId].push({ id: b.id, name: b.name, icon: b.icon, description: b.description, color: b.color });
+      }
+      for (const r of rankingCounts) {
+        rankingCountMap[r.playerId] = Number(r.count);
+      }
+    }
 
     res.json({
       players: players.map(p => ({
         ...p,
         createdAt: p.createdAt.toISOString(),
         updatedAt: p.updatedAt.toISOString(),
-        badges: [],
+        badges: badgesMap[p.id] || [],
+        gamemodeCount: rankingCountMap[p.id] || 0,
       })),
       total: Number(count),
     });
