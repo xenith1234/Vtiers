@@ -63,6 +63,31 @@ A premium Minecraft PvP tier list website with cyan+black glassmorphism theme, a
 - Dark theme only
 - Space Mono / Inter fonts
 
+## Discord Bot
+
+Located at `artifacts/discord-bot/`. Standalone Discord.js v14 bot with 3 slash commands.
+
+### Required Secrets (add in Replit Secrets tab)
+- `DISCORD_BOT_TOKEN` — from Discord Developer Portal → Bot → Reset Token
+- `DISCORD_CLIENT_ID` — from Discord Developer Portal → General Information → Application ID
+- `DISCORD_GUILD_ID` — (optional) your server ID for instant command registration during testing
+- `BOT_API_SECRET` — already generated and set automatically (used by submit-test endpoint)
+- `API_BASE_URL` — set to `https://<your-replit-domain>/api` when running bot inside the repl
+
+### Bot Setup Steps
+1. Go to https://discord.com/developers/applications → New Application → Bot → Add Bot
+2. Copy Token → add as `DISCORD_BOT_TOKEN` secret
+3. Copy Application ID → add as `DISCORD_CLIENT_ID` secret
+4. Enable: Server Members Intent, Message Content Intent (Bot → Privileged Gateway Intents)
+5. Register slash commands: `pnpm --filter @workspace/discord-bot run deploy-commands`
+6. Add a new Workflow in Replit: Name = "Discord Bot", Command = `pnpm --filter @workspace/discord-bot run dev`
+7. Invite bot to your server: OAuth2 → URL Generator → Scopes: bot, applications.commands → Permissions: Send Messages, Embed Links, Use Slash Commands
+
+### Commands
+- `/panel` — (admin) posts the testing panel with verify + gamemode waitlist buttons
+- `/submittest username gamemode rank_earned` — (moderator) submits test, posts announcement embed, updates leaderboard
+- `/profile username` — (public) shows player's full tier profile card
+
 ## Gotchas
 
 - Always run `pnpm --filter @workspace/api-spec run codegen` after changing `openapi.yaml`

@@ -360,4 +360,139 @@ router.post("/users/:id/ban", requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// ── Public profile endpoint (used by Discord bot /profile command) ──
+router.get("/profile/:username", async (req, res) => {
+  try {
+    const username = String(req.params.username);
+    const [player] = await db.select().from(playersTable)
+      .where(ilike(playersTable.minecraftUsername, username))
+      .limit(1);
+    if (!player) { res.status(404).json({ error: "Player not found" }); return; }
+
+    const [rankings, badges] = await Promise.all([
+      db.select({
+        gamemodeId: rankingsTable.gamemodeId,
+        gamemodeName: gamemodesTable.name,
+        tier: rankingsTable.tier,
+        points: rankingsTable.points,
+        matches: rankingsTable.matches,
+        kills: rankingsTable.kills,
+        deaths: rankingsTable.deaths,
+        winRate: rankingsTable.winRate,
+      })
+        .from(rankingsTable)
+        .innerJoin(gamemodesTable, eq(rankingsTable.gamemodeId, gamemodesTable.id))
+        .where(eq(rankingsTable.playerId, player.id)),
+      db.select({ id: badgesTable.id, name: badgesTable.name, icon: badgesTable.icon, color: badgesTable.color, description: badgesTable.description })
+        .from(playerBadgesTable)
+        .innerJoin(badgesTable, eq(playerBadgesTable.badgeId, badgesTable.id))
+        .where(eq(playerBadgesTable.playerId, player.id)),
+    ]);
+
+    res.json({
+      id: player.id,
+      minecraftUsername: player.minecraftUsername,
+      uuid: player.uuid,
+      discord: player.discord,
+      country: player.country,
+      countryCode: player.countryCode,
+      overallTier: player.overallTier || "UR",
+      points: player.points,
+      avatarUrl: `https://mc-heads.net/avatar/${player.minecraftUsername}/64`,
+      createdAt: player.createdAt.toISOString(),
+      badges,
+      rankings: rankings.map(r => ({
+        ...r,
+        kdr: r.deaths === 0 ? r.kills : Math.round((r.kills / r.deaths) * 100) / 100,
+      })),
+    });
+  } catch (err) {
+    logger.error({ err }, "Profile error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── Submit-test endpoint (called by Discord bot /submittest command) ──
+const TIER_ORDER_BOT: Record<string, number> = { HT1: 11, HT2: 10, HT3: 9, HT4: 8, HT5: 7, LT1: 6, LT2: 5, LT3: 4, LT4: 3, LT5: 2, UR: 1 };
+
+router.post("/submit-test", async (req, res) => {
+  // Authenticate via BOT_API_SECRET header
+  const secret = process.env.BOT_API_SECRET;
+  const authHeader = req.headers["x-bot-secret"];
+  if (!secret || authHeader !== secret) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const { username, testerName, gamemode, rankBefore, rankEarned } = req.body;
+    if (!username || !gamemode || !rankEarned) {
+      res.status(400).json({ error: "username, gamemode, and rankEarned are required" });
+      return;
+    }
+
+    // Find or create player
+    let [player] = await db.select().from(playersTable)
+      .where(ilike(playersTable.minecraftUsername, username))
+      .limit(1);
+    if (!player) {
+      [player] = await db.insert(playersTable).values({
+        minecraftUsername: username,
+        overallTier: rankEarned,
+        points: 0,
+      }).returning();
+    }
+
+    // Find gamemode by name (fuzzy)
+    const gamemodes = await db.select().from(gamemodesTable);
+    const gm = gamemodes.find(g =>
+      g.name.toLowerCase().includes(gamemode.toLowerCase()) ||
+      gamemode.toLowerCase().includes(g.name.toLowerCase())
+    );
+    if (!gm) { res.status(404).json({ error: `Gamemode "${gamemode}" not found` }); return; }
+
+    // Upsert ranking
+    const [existing] = await db.select().from(rankingsTable)
+      .where(and(eq(rankingsTable.playerId, player.id), eq(rankingsTable.gamemodeId, gm.id)))
+      .limit(1);
+
+    let ranking;
+    if (existing) {
+      [ranking] = await db.update(rankingsTable)
+        .set({ tier: rankEarned, updatedAt: new Date() })
+        .where(eq(rankingsTable.id, existing.id))
+        .returning();
+    } else {
+      [ranking] = await db.insert(rankingsTable)
+        .values({ playerId: player.id, gamemodeId: gm.id, tier: rankEarned, points: 0 })
+        .returning();
+    }
+
+    // Recalculate overall tier and total points
+    const allRankings = await db.select().from(rankingsTable).where(eq(rankingsTable.playerId, player.id));
+    const best = allRankings.reduce((a, b) => (TIER_ORDER_BOT[a.tier] || 0) > (TIER_ORDER_BOT[b.tier] || 0) ? a : b);
+    const totalPts = allRankings.reduce((sum, r) => sum + r.points, 0);
+    await db.update(playersTable)
+      .set({ overallTier: best.tier, points: totalPts, updatedAt: new Date() })
+      .where(eq(playersTable.id, player.id));
+
+    // Log activity
+    await db.insert(activityLogsTable).values({
+      type: "test_submitted",
+      description: `${player.minecraftUsername} tested ${gm.name}: ${rankBefore || "?"} → ${rankEarned} (by ${testerName || "unknown"})`,
+      playerName: player.minecraftUsername,
+    });
+
+    res.json({
+      success: true,
+      player: { id: player.id, minecraftUsername: player.minecraftUsername, overallTier: best.tier },
+      ranking: { gamemode: gm.name, rankBefore: rankBefore || null, rankEarned, updatedAt: ranking.updatedAt.toISOString() },
+    });
+  } catch (err) {
+    logger.error({ err }, "Submit-test error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;
+
