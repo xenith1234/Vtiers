@@ -87,7 +87,7 @@ export default function LeaderboardPage() {
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                     selectedGamemodeId === gm.id ? "bg-cyan-500/20 border border-cyan-500/20" : "bg-white/5 border border-white/5"
                   }`}>
-                    <MinecraftIcon name={gm.name} size={20} />
+                    <MinecraftIcon name={gm.name} icon={gm.icon ?? undefined} size={20} />
                   </div>
                   <span className="uppercase tracking-wide">{gm.name}</span>
                 </button>

@@ -255,7 +255,7 @@ export default function HomePage() {
                   >
                     <Link href={`/leaderboard?gamemode=${gm.id}`}>
                       <div className="rounded-xl border border-cyan-500/10 bg-black/40 p-4 text-center hover:border-cyan-500/30 hover:bg-black/60 transition-all cursor-pointer group">
-                        <div className="flex justify-center mb-2"><MinecraftIcon name={gm.name} size={32} /></div>
+                        <div className="flex justify-center mb-2"><MinecraftIcon name={gm.name} icon={gm.icon ?? undefined} size={32} /></div>
                         <div className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors truncate">{gm.name}</div>
                         <div className="text-xs text-gray-600 mt-1">{gm.playerCount} players</div>
                       </div>

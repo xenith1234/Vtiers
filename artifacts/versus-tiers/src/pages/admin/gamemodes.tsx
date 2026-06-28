@@ -1,27 +1,53 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, Eye, EyeOff, X, Save } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, X, Save, Upload, ImageIcon } from "lucide-react";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { useAuth } from "@/lib/auth-context";
+import { MinecraftIcon } from "@/components/ui/minecraft-icon";
 import { useListGamemodes, useCreateGamemode, useUpdateGamemode, useDeleteGamemode, getListGamemodesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Gamemode } from "@workspace/api-client-react/src/generated/api.schemas";
-
-const GAMEMODE_ICONS = ["⚔️","🪓","💎","🧪","🛡️","🏹","🗡️","🔥","⚡","🌟","🎯","🏆","👑","💀","🌙","☀️","🎪","🎮","⚙️","🧲"];
 
 function GamemodeModal({ gm, onClose }: { gm?: Gamemode | null; onClose: () => void }) {
   const qc = useQueryClient();
   const createMutation = useCreateGamemode();
   const updateMutation = useUpdateGamemode();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState({
     name: gm?.name || "",
-    icon: gm?.icon || "⚔️",
+    icon: gm?.icon || "",
     description: gm?.description || "",
     enabled: gm?.enabled ?? true,
     sortOrder: gm?.sortOrder?.toString() || "0",
     color: gm?.color || "#00e5ff",
   });
+  const [iconError, setIconError] = useState("");
+
+  const isImageIcon = form.icon.startsWith("data:") || form.icon.startsWith("http");
+
+  const handleIconFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1.5 * 1024 * 1024) {
+      setIconError("Image must be under 1.5 MB.");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setIconError("Please select an image file (PNG, WebP, GIF…)");
+      return;
+    }
+    setIconError("");
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      setForm(f => ({ ...f, icon: result }));
+    };
+    reader.readAsDataURL(file);
+    // reset input so same file can be re-selected
+    e.target.value = "";
+  };
 
   const handleSave = async () => {
     const data = { ...form, sortOrder: parseInt(form.sortOrder) || 0 };
@@ -36,34 +62,97 @@ function GamemodeModal({ gm, onClose }: { gm?: Gamemode | null; onClose: () => v
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md rounded-2xl border border-white/10 bg-black/90 p-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-black/90 p-6 max-h-[90vh] overflow-y-auto"
+      >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-black">{gm ? "Edit Gamemode" : "Add Gamemode"}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={20} /></button>
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
         </div>
+
         <div className="space-y-4">
+
+          {/* ── Icon ─────────────────────────────────────────────── */}
           <div>
-            <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Icon</label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {GAMEMODE_ICONS.map(icon => (
+            <label className="block text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+              Gamemode Icon
+            </label>
+
+            <div className="flex items-start gap-3">
+              {/* Preview box */}
+              <div className="flex-shrink-0 w-16 h-16 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden">
+                {form.icon ? (
+                  <MinecraftIcon name={form.name || "gamemode"} icon={form.icon} size={40} />
+                ) : (
+                  <ImageIcon size={24} className="text-gray-600" />
+                )}
+              </div>
+
+              <div className="flex-1 space-y-2">
+                {/* Upload button */}
                 <button
-                  key={icon}
-                  onClick={() => setForm(f => ({ ...f, icon }))}
-                  className={`w-8 h-8 rounded text-lg transition-all ${form.icon === icon ? "bg-cyan-500/20 border border-cyan-500/50" : "border border-white/10 hover:border-white/20"}`}
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-lg text-cyan-400 hover:bg-cyan-500/20 hover:border-cyan-500/40 transition-all text-sm font-semibold"
                 >
-                  {icon}
+                  <Upload size={14} />
+                  {isImageIcon ? "Replace Image" : "Upload Image"}
                 </button>
-              ))}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/webp,image/gif,image/jpeg"
+                  className="hidden"
+                  onChange={handleIconFile}
+                />
+                {iconError && <p className="text-xs text-red-400">{iconError}</p>}
+
+                {/* Emoji fallback */}
+                <div className="flex items-center gap-2">
+                  <div className="h-px flex-1 bg-white/5" />
+                  <span className="text-xs text-gray-600">or type emoji</span>
+                  <div className="h-px flex-1 bg-white/5" />
+                </div>
+                <input
+                  type="text"
+                  value={isImageIcon ? "" : form.icon}
+                  onChange={e => setForm(f => ({ ...f, icon: e.target.value }))}
+                  placeholder="⚔️"
+                  maxLength={8}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-600 text-sm focus:outline-none focus:border-cyan-500/50 text-center text-lg"
+                />
+              </div>
             </div>
+
+            {isImageIcon && (
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, icon: "" }))}
+                className="mt-2 text-xs text-red-400 hover:text-red-300 transition-colors"
+              >
+                ✕ Remove image
+              </button>
+            )}
+            <p className="text-xs text-gray-600 mt-1.5">
+              PNG, WebP or GIF under 1.5 MB. Shown on the website and leaderboard. Emoji is shown on Discord.
+            </p>
           </div>
+
+          {/* ── Other fields ─────────────────────────────────────── */}
           {[
-            { key: "name", label: "Name", placeholder: "Sword PvP" },
+            { key: "name",        label: "Name",        placeholder: "Sword PvP" },
             { key: "description", label: "Description", placeholder: "Classic sword fighting" },
-            { key: "sortOrder", label: "Sort Order", placeholder: "0", type: "number" },
-            { key: "color", label: "Color", placeholder: "#00e5ff", type: "color" },
+            { key: "sortOrder",   label: "Sort Order",  placeholder: "0", type: "number" },
+            { key: "color",       label: "Accent Color",placeholder: "#00e5ff", type: "color" },
           ].map(field => (
             <div key={field.key}>
-              <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">{field.label}</label>
+              <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">
+                {field.label}
+              </label>
               <input
                 type={field.type || "text"}
                 value={(form as any)[field.key]}
@@ -73,20 +162,32 @@ function GamemodeModal({ gm, onClose }: { gm?: Gamemode | null; onClose: () => v
               />
             </div>
           ))}
+
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={form.enabled} onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))}
-              className="w-4 h-4 rounded" />
+            <input
+              type="checkbox"
+              checked={form.enabled}
+              onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))}
+              className="w-4 h-4 rounded"
+            />
             <span className="text-sm text-gray-300">Enabled</span>
           </label>
         </div>
+
         <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-white/10 text-gray-400 hover:text-white transition-all text-sm">Cancel</button>
+          <button
+            onClick={onClose}
+            className="flex-1 py-2 rounded-lg border border-white/10 text-gray-400 hover:text-white transition-all text-sm"
+          >
+            Cancel
+          </button>
           <button
             onClick={handleSave}
             disabled={createMutation.isPending || updateMutation.isPending}
             className="flex-1 flex items-center justify-center gap-2 py-2 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-400 disabled:opacity-50 transition-all text-sm"
           >
-            <Save size={14} /> Save
+            <Save size={14} />
+            {createMutation.isPending || updateMutation.isPending ? "Saving…" : "Save"}
           </button>
         </div>
       </motion.div>
@@ -103,7 +204,10 @@ export default function AdminGamemodesPage() {
   if (!user) { navigate("/auth/login"); return null; }
   if (!isAdmin) { navigate("/"); return null; }
 
-  const { data: gamemodes, isLoading } = useListGamemodes({ params: { includeDisabled: true } }, { query: { queryKey: getListGamemodesQueryKey({ includeDisabled: true }) } });
+  const { data: gamemodes, isLoading } = useListGamemodes(
+    { params: { includeDisabled: true } },
+    { query: { queryKey: getListGamemodesQueryKey({ includeDisabled: true }) } },
+  );
   const deleteMutation = useDeleteGamemode();
   const updateMutation = useUpdateGamemode();
 
@@ -150,18 +254,27 @@ export default function AdminGamemodesPage() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{gm.icon || "⚔️"}</span>
+                    <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      <MinecraftIcon name={gm.name} icon={gm.icon ?? undefined} size={28} />
+                    </div>
                     <div>
                       <div className="font-bold text-white">{gm.name}</div>
                       <div className="text-xs text-gray-600">{gm.playerCount} players</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => handleToggle(gm)} className={`p-1.5 rounded transition-all ${gm.enabled ? "text-green-400 hover:bg-green-500/10" : "text-gray-600 hover:bg-white/5"}`}>
+                    <button
+                      onClick={() => handleToggle(gm)}
+                      className={`p-1.5 rounded transition-all ${gm.enabled ? "text-green-400 hover:bg-green-500/10" : "text-gray-600 hover:bg-white/5"}`}
+                    >
                       {gm.enabled ? <Eye size={14} /> : <EyeOff size={14} />}
                     </button>
-                    <button onClick={() => setModal(gm)} className="p-1.5 rounded text-gray-500 hover:text-white hover:bg-white/5 transition-all"><Pencil size={14} /></button>
-                    <button onClick={() => handleDelete(gm.id)} className="p-1.5 rounded text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all"><Trash2 size={14} /></button>
+                    <button onClick={() => setModal(gm)} className="p-1.5 rounded text-gray-500 hover:text-white hover:bg-white/5 transition-all">
+                      <Pencil size={14} />
+                    </button>
+                    <button onClick={() => handleDelete(gm.id)} className="p-1.5 rounded text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
                 {gm.description && <div className="text-xs text-gray-600 mt-2 truncate">{gm.description}</div>}
