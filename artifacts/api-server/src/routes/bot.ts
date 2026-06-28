@@ -8,6 +8,15 @@ import crypto from "crypto";
 const router = Router();
 
 async function requireBotKey(req: any, res: any, next: any) {
+  // Accept BOT_API_SECRET via x-bot-secret header (used by the Discord bot internally)
+  const botSecret = process.env.BOT_API_SECRET;
+  const xBotSecret = req.headers["x-bot-secret"] as string | undefined;
+  if (botSecret && xBotSecret && xBotSecret === botSecret) {
+    next();
+    return;
+  }
+
+  // Fall back to DB API key check (Bearer token or ?key= query param)
   const authHeader = req.headers.authorization as string | undefined;
   const queryKey = req.query.key as string | undefined;
   const rawKey = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : queryKey;
@@ -45,9 +54,10 @@ router.get("/bot/player/:username", requireBotKey, async (req, res) => {
     const rankings = await db.select({
       tier: rankingsTable.tier,
       points: rankingsTable.points,
-      wins: rankingsTable.wins,
-      losses: rankingsTable.losses,
-      kdr: rankingsTable.kdr,
+      kills: rankingsTable.kills,
+      deaths: rankingsTable.deaths,
+      matches: rankingsTable.matches,
+      winRate: rankingsTable.winRate,
       gamemodeName: gamemodesTable.name,
       gamemodeIcon: gamemodesTable.icon,
     })
@@ -69,9 +79,10 @@ router.get("/bot/player/:username", requireBotKey, async (req, res) => {
         icon: r.gamemodeIcon,
         tier: r.tier,
         points: r.points,
-        wins: r.wins,
-        losses: r.losses,
-        kdr: r.kdr,
+        kills: r.kills,
+        deaths: r.deaths,
+        matches: r.matches,
+        winRate: r.winRate,
       })),
     });
   } catch (err) {
@@ -124,8 +135,10 @@ router.get("/bot/leaderboard", requireBotKey, async (req, res) => {
         minecraftUsername: playersTable.minecraftUsername,
         tier: rankingsTable.tier,
         points: rankingsTable.points,
-        wins: rankingsTable.wins,
-        losses: rankingsTable.losses,
+        kills: rankingsTable.kills,
+        deaths: rankingsTable.deaths,
+        matches: rankingsTable.matches,
+        winRate: rankingsTable.winRate,
         gamemodeName: gamemodesTable.name,
       })
         .from(rankingsTable)
@@ -137,7 +150,8 @@ router.get("/bot/leaderboard", requireBotKey, async (req, res) => {
 
       res.json(results.map((r, i) => ({
         rank: i + 1, username: r.minecraftUsername, gamemode: r.gamemodeName,
-        tier: r.tier, points: r.points, wins: r.wins, losses: r.losses,
+        tier: r.tier, points: r.points,
+        kills: r.kills, deaths: r.deaths, matches: r.matches, winRate: r.winRate,
       })));
     } else {
       const results = await db.select().from(playersTable).orderBy(desc(playersTable.points)).limit(limit);

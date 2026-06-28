@@ -81,6 +81,17 @@ export function isOnCooldown(userId: string, gamemode: string): boolean {
   return elapsed < FIVE_DAYS_MS;
 }
 
+/** Mark a player as tested in a gamemode — activates the 5-day cooldown. */
+export function markTested(gamemode: string, minecraftUsername: string): boolean {
+  const data = getWaitlist();
+  const list = data[gamemode] ?? [];
+  const idx = list.findIndex(e => e.minecraftUsername.toLowerCase() === minecraftUsername.toLowerCase());
+  if (idx === -1) return false;
+  list[idx].lastTestedAt = new Date().toISOString();
+  writeJson("waitlist.json", data);
+  return true;
+}
+
 export function getCooldownRemaining(userId: string, gamemode: string): string {
   const entry = getCooldownEntry(userId, gamemode);
   if (!entry?.lastTestedAt) return "0";

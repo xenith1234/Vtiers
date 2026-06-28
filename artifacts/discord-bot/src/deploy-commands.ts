@@ -4,6 +4,9 @@ import * as submittest from "./commands/submittest.js";
 import * as profile from "./commands/profile.js";
 import * as waitlist from "./commands/waitlist.js";
 import * as cooldown from "./commands/cooldown.js";
+import * as close from "./commands/close.js";
+import * as leaderboard from "./commands/leaderboard.js";
+import * as syncgamemodes from "./commands/syncgamemodes.js";
 
 const token    = process.env.DISCORD_BOT_TOKEN;
 const clientId = process.env.DISCORD_CLIENT_ID;
@@ -15,38 +18,45 @@ if (!token || !clientId) {
   process.exit(1);
 }
 
-// ── Fetch live gamemodes from the API so /submittest choices always match the DB ──
-let gamemodeChoices: { name: string; value: string }[] = [];
+// ── Fetch live gamemodes so /submittest and /leaderboard choices match the DB ──
+type GamemodeFromApi = { id: number; name: string; enabled?: boolean };
+let gamemodes: GamemodeFromApi[] = [];
+
 try {
   console.log(`🔄  Fetching gamemodes from API (${apiBase})…`);
   const res = await fetch(`${apiBase}/gamemodes`);
   if (res.ok) {
-    const gms = await res.json() as { name: string; enabled?: boolean }[];
-    gamemodeChoices = gms
-      .filter(g => g.enabled !== false)
-      .slice(0, 25) // Discord max 25 choices
-      .map(g => ({ name: g.name, value: g.name }));
-    console.log(`✅  Loaded ${gamemodeChoices.length} gamemodes: ${gamemodeChoices.map(g => g.name).join(", ")}`);
+    const all = await res.json() as GamemodeFromApi[];
+    gamemodes = all.filter(g => g.enabled !== false);
+    console.log(`✅  Loaded ${gamemodes.length} gamemodes: ${gamemodes.map(g => g.name).join(", ")}`);
   } else {
-    console.warn(`⚠️  Could not fetch gamemodes (HTTP ${res.status}). Registering /submittest without choices — user will type gamemode name manually.`);
+    console.warn(`⚠️  Could not fetch gamemodes (HTTP ${res.status}). Registering without choices.`);
   }
 } catch (err) {
-  console.warn("⚠️  API not reachable. Registering /submittest without choices — user will type gamemode name manually.", err);
+  console.warn("⚠️  API not reachable. Registering without choices.", err);
 }
+
+// /submittest uses gamemode NAME as value (API fuzzy-matches by name)
+const submitChoices = gamemodes.slice(0, 25).map(g => ({ name: g.name, value: g.name }));
+
+// /leaderboard uses gamemode ID as value (direct DB lookup)
+const lbChoices = gamemodes.slice(0, 25).map(g => ({ name: g.name, value: String(g.id) }));
 
 const commands = [
   panel.data,
-  submittest.buildData(gamemodeChoices),
+  submittest.buildData(submitChoices),
   profile.data,
   waitlist.data,
   cooldown.data,
+  close.data,
+  leaderboard.buildData(lbChoices),
+  syncgamemodes.data,
 ].map(c => c.toJSON());
 
 const rest = new REST({ version: "10" }).setToken(token);
 
 try {
   console.log(`🔄  Registering ${commands.length} slash commands…`);
-
   if (guildId) {
     await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
     console.log(`✅  Registered to guild ${guildId}`);

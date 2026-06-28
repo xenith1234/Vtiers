@@ -5,6 +5,24 @@
       "minecraftUsername": "STILL_UR_AYESHA",
       "gamemode": "sword",
       "addedAt": "2026-06-27T11:29:51.301Z"
+    },
+    {
+      "userId": "1479860922095763667",
+      "minecraftUsername": "berkay6925",
+      "gamemode": "sword",
+      "addedAt": "2026-06-27T15:52:52.837Z"
+    },
+    {
+      "userId": "1425129881242570894",
+      "minecraftUsername": "Lowkey_Shad0w",
+      "gamemode": "sword",
+      "addedAt": "2026-06-27T16:15:15.681Z"
+    },
+    {
+      "userId": "1389972782020034601",
+      "minecraftUsername": "Hunter44781",
+      "gamemode": "sword",
+      "addedAt": "2026-06-27T16:22:39.469Z"
     }
   ],
   "axe": [
@@ -13,6 +31,12 @@
       "minecraftUsername": "STILL_UR_AYESHA",
       "gamemode": "axe",
       "addedAt": "2026-06-27T11:14:42.335Z"
+    },
+    {
+      "userId": "1126590316703649912",
+      "minecraftUsername": "MrFuryy",
+      "gamemode": "axe",
+      "addedAt": "2026-06-27T17:56:26.934Z"
     }
   ],
   "mace": [
@@ -21,6 +45,62 @@
       "minecraftUsername": "STILL_UR_AYESHA",
       "gamemode": "mace",
       "addedAt": "2026-06-27T11:46:15.251Z"
+    },
+    {
+      "userId": "1126590316703649912",
+      "minecraftUsername": "MrFuryy",
+      "gamemode": "mace",
+      "addedAt": "2026-06-27T17:56:20.208Z"
+    }
+  ],
+  "nethop": [
+    {
+      "userId": "1167674011690471494",
+      "minecraftUsername": "author00o",
+      "gamemode": "nethop",
+      "addedAt": "2026-06-27T13:11:05.913Z"
+    },
+    {
+      "userId": "1126590316703649912",
+      "minecraftUsername": "MrFuryy",
+      "gamemode": "nethop",
+      "addedAt": "2026-06-27T17:56:29.841Z"
+    }
+  ],
+  "crystal": [
+    {
+      "userId": "1410941948763836446",
+      "minecraftUsername": "Proscholar28",
+      "gamemode": "crystal",
+      "addedAt": "2026-06-27T15:03:49.027Z"
+    },
+    {
+      "userId": "1515422829271711825",
+      "minecraftUsername": "STILL_UR_AYESHA",
+      "gamemode": "crystal",
+      "addedAt": "2026-06-27T17:40:31.981Z"
+    },
+    {
+      "userId": "1126590316703649912",
+      "minecraftUsername": "MrFuryy",
+      "gamemode": "crystal",
+      "addedAt": "2026-06-27T17:56:07.061Z"
+    }
+  ],
+  "smp": [
+    {
+      "userId": "1126590316703649912",
+      "minecraftUsername": "MrFuryy",
+      "gamemode": "smp",
+      "addedAt": "2026-06-27T17:56:12.572Z"
+    }
+  ],
+  "uhc": [
+    {
+      "userId": "1126590316703649912",
+      "minecraftUsername": "MrFuryy",
+      "gamemode": "uhc",
+      "addedAt": "2026-06-27T17:56:23.993Z"
     }
   ]
 }

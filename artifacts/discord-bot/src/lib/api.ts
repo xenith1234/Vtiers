@@ -31,6 +31,42 @@ export async function fetchProfile(username: string): Promise<PlayerProfile | nu
   return (await res.json()) as PlayerProfile;
 }
 
+export interface GamemodeInfo {
+  id: number;
+  name: string;
+  icon: string | null;
+  description: string | null;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  username: string;
+  tier?: string;
+  points: number;
+  kills?: number;
+  deaths?: number;
+  matches?: number;
+  winRate?: number;
+  gamemode?: string;
+  overallTier?: string;
+}
+
+export async function fetchGamemodes(): Promise<GamemodeInfo[]> {
+  const res = await fetch(`${API_BASE}/gamemodes`);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return (await res.json()) as GamemodeInfo[];
+}
+
+export async function fetchLeaderboard(gamemodeId?: number, limit = 10): Promise<LeaderboardEntry[]> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (gamemodeId !== undefined) params.set("gamemode", String(gamemodeId));
+  const res = await fetch(`${API_BASE}/bot/leaderboard?${params}`, {
+    headers: { "x-bot-secret": BOT_SECRET },
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return (await res.json()) as LeaderboardEntry[];
+}
+
 export async function submitTest(data: {
   username: string;
   testerName: string;
