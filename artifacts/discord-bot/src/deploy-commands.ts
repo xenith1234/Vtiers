@@ -1,12 +1,16 @@
 import { REST, Routes } from "discord.js";
-import * as panel from "./commands/panel.js";
-import * as submittest from "./commands/submittest.js";
-import * as profile from "./commands/profile.js";
-import * as waitlist from "./commands/waitlist.js";
-import * as cooldown from "./commands/cooldown.js";
-import * as close from "./commands/close.js";
-import * as leaderboard from "./commands/leaderboard.js";
-import * as syncgamemodes from "./commands/syncgamemodes.js";
+import * as panel          from "./commands/panel.js";
+import * as submittest     from "./commands/submittest.js";
+import * as profile        from "./commands/profile.js";
+import * as waitlist       from "./commands/waitlist.js";
+import * as cooldown       from "./commands/cooldown.js";
+import * as close          from "./commands/close.js";
+import * as leaderboard    from "./commands/leaderboard.js";
+import * as syncgamemodes  from "./commands/syncgamemodes.js";
+import * as appeal         from "./commands/appeal.js";
+import * as announce       from "./commands/announce.js";
+import * as teststats      from "./commands/teststats.js";
+import * as activity       from "./commands/activity.js";
 
 const token    = process.env.DISCORD_BOT_TOKEN;
 const clientId = process.env.DISCORD_CLIENT_ID;
@@ -18,39 +22,43 @@ if (!token || !clientId) {
   process.exit(1);
 }
 
-// ── Fetch live gamemodes so /submittest and /leaderboard choices match the DB ──
-type GamemodeFromApi = { id: number; name: string; enabled?: boolean };
-let gamemodes: GamemodeFromApi[] = [];
+// ── Fetch live gamemodes so dropdowns always match the DB ─────────────────────
+type ApiGamemode = { id: number; name: string; enabled?: boolean };
+let gamemodes: ApiGamemode[] = [];
 
 try {
-  console.log(`🔄  Fetching gamemodes from API (${apiBase})…`);
+  console.log(`🔄  Fetching gamemodes from ${apiBase}…`);
   const res = await fetch(`${apiBase}/gamemodes`);
   if (res.ok) {
-    const all = await res.json() as GamemodeFromApi[];
+    const all = (await res.json()) as ApiGamemode[];
     gamemodes = all.filter(g => g.enabled !== false);
     console.log(`✅  Loaded ${gamemodes.length} gamemodes: ${gamemodes.map(g => g.name).join(", ")}`);
   } else {
     console.warn(`⚠️  Could not fetch gamemodes (HTTP ${res.status}). Registering without choices.`);
   }
 } catch (err) {
-  console.warn("⚠️  API not reachable. Registering without choices.", err);
+  console.warn("⚠️  API unreachable. Registering without gamemode choices.", err);
 }
 
-// /submittest uses gamemode NAME as value (API fuzzy-matches by name)
-const submitChoices = gamemodes.slice(0, 25).map(g => ({ name: g.name, value: g.name }));
+// /submittest + /appeal use name-as-value (API fuzzy-matches by name)
+const nameChoices = gamemodes.slice(0, 25).map(g => ({ name: g.name, value: g.name }));
 
-// /leaderboard uses gamemode ID as value (direct DB lookup)
-const lbChoices = gamemodes.slice(0, 25).map(g => ({ name: g.name, value: String(g.id) }));
+// /leaderboard uses id-as-value (direct DB lookup)
+const idChoices = gamemodes.slice(0, 25).map(g => ({ name: g.name, value: String(g.id) }));
 
 const commands = [
   panel.data,
-  submittest.buildData(submitChoices),
+  submittest.buildData(nameChoices),
   profile.data,
   waitlist.data,
   cooldown.data,
   close.data,
-  leaderboard.buildData(lbChoices),
+  leaderboard.buildData(idChoices),
   syncgamemodes.data,
+  appeal.buildData(nameChoices),
+  announce.data,
+  teststats.data,
+  activity.data,
 ].map(c => c.toJSON());
 
 const rest = new REST({ version: "10" }).setToken(token);

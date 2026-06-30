@@ -57,6 +57,22 @@ export async function fetchGamemodes(): Promise<GamemodeInfo[]> {
   return (await res.json()) as GamemodeInfo[];
 }
 
+export interface ActivityEntry {
+  username: string;
+  tier: string;
+  points: number;
+  gamemode: string;
+  updatedAt: string;
+}
+
+export async function fetchActivity(limit = 10): Promise<ActivityEntry[]> {
+  const res = await fetch(`${API_BASE}/bot/activity?limit=${limit}`, {
+    headers: { "x-bot-secret": BOT_SECRET },
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return (await res.json()) as ActivityEntry[];
+}
+
 export async function fetchLeaderboard(gamemodeId?: number, limit = 10): Promise<LeaderboardEntry[]> {
   const params = new URLSearchParams({ limit: String(limit) });
   if (gamemodeId !== undefined) params.set("gamemode", String(gamemodeId));

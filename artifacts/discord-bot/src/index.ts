@@ -1,12 +1,16 @@
 import { Client, GatewayIntentBits, Events } from "discord.js";
-import * as panelCmd from "./commands/panel.js";
-import * as submittestCmd from "./commands/submittest.js";
-import * as profileCmd from "./commands/profile.js";
-import * as waitlistCmd from "./commands/waitlist.js";
-import * as cooldownCmd from "./commands/cooldown.js";
-import * as closeCmd from "./commands/close.js";
-import * as leaderboardCmd from "./commands/leaderboard.js";
+import * as panelCmd        from "./commands/panel.js";
+import * as submittestCmd   from "./commands/submittest.js";
+import * as profileCmd      from "./commands/profile.js";
+import * as waitlistCmd     from "./commands/waitlist.js";
+import * as cooldownCmd     from "./commands/cooldown.js";
+import * as closeCmd        from "./commands/close.js";
+import * as leaderboardCmd  from "./commands/leaderboard.js";
 import * as syncgamemodesCmd from "./commands/syncgamemodes.js";
+import * as appealCmd       from "./commands/appeal.js";
+import * as announceCmd     from "./commands/announce.js";
+import * as teststatsCmd    from "./commands/teststats.js";
+import * as activityCmd     from "./commands/activity.js";
 import {
   handleVerifyButton,
   handleVerifyModal,
@@ -38,7 +42,7 @@ client.once(Events.ClientReady, (c) => {
 // ── Interaction handler ───────────────────────────────────────────────────────
 client.on(Events.InteractionCreate, async (interaction) => {
 
-  // Slash commands
+  // ── Slash commands ──────────────────────────────────────────────────────────
   if (interaction.isChatInputCommand()) {
     switch (interaction.commandName) {
       case "panel":         await panelCmd.execute(interaction).catch(console.error);         break;
@@ -49,17 +53,37 @@ client.on(Events.InteractionCreate, async (interaction) => {
       case "close":         await closeCmd.execute(interaction).catch(console.error);         break;
       case "leaderboard":   await leaderboardCmd.execute(interaction).catch(console.error);   break;
       case "syncgamemodes": await syncgamemodesCmd.execute(interaction).catch(console.error); break;
+      case "appeal":        await appealCmd.execute(interaction).catch(console.error);        break;
+      case "announce":      await announceCmd.execute(interaction).catch(console.error);      break;
+      case "teststats":     await teststatsCmd.execute(interaction).catch(console.error);     break;
+      case "activity":      await activityCmd.execute(interaction).catch(console.error);      break;
     }
     return;
   }
 
-  // Button interactions
+  // ── Button interactions ─────────────────────────────────────────────────────
   if (interaction.isButton()) {
     const { customId } = interaction;
+
+    // Appeal buttons: appeal_approve:<id> / appeal_deny:<id>
+    if (customId.startsWith("appeal_approve:")) {
+      const appealId = customId.slice("appeal_approve:".length);
+      await appealCmd.handleApproveButton(interaction, appealId).catch(console.error);
+      return;
+    }
+    if (customId.startsWith("appeal_deny:")) {
+      const appealId = customId.slice("appeal_deny:".length);
+      await appealCmd.handleDenyButton(interaction, appealId).catch(console.error);
+      return;
+    }
+
+    // Panel verify button
     if (customId === "verify_profile") {
       await handleVerifyButton(interaction).catch(console.error);
       return;
     }
+
+    // Gamemode waitlist buttons
     if (customId.startsWith("gm_")) {
       const gamemode = customId.replace("gm_", "");
       await handleGamemodeButton(interaction, gamemode).catch(console.error);
@@ -67,7 +91,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   }
 
-  // Modal submissions
+  // ── Modal submissions ───────────────────────────────────────────────────────
   if (interaction.isModalSubmit()) {
     if (interaction.customId === "verify_username_modal") {
       await handleVerifyModal(interaction).catch(console.error);
@@ -75,7 +99,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     return;
   }
 
-  // Select menu interactions
+  // ── Select menus ────────────────────────────────────────────────────────────
   if (interaction.isStringSelectMenu()) {
     const { customId } = interaction;
     if (customId.startsWith("verify_region:")) {

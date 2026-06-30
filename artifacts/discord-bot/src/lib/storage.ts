@@ -102,3 +102,88 @@ export function getCooldownRemaining(userId: string, gamemode: string): string {
   const hours = Math.floor((remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
   return `${days}d ${hours}h`;
 }
+
+/** Reverse-lookup a Discord user ID from a Minecraft username (from verified.json). */
+export function getDiscordIdByMinecraft(mcUsername: string): string | null {
+  const data = readJson<Record<string, VerifiedProfile>>("verified.json");
+  for (const [discordId, profile] of Object.entries(data)) {
+    if (profile.minecraftUsername.toLowerCase() === mcUsername.toLowerCase()) {
+      return discordId;
+    }
+  }
+  return null;
+}
+
+// ── Test Log ───────────────────────────────────────────────────────────────────
+export interface TestLogEntry {
+  testerDiscordId: string;
+  testerName: string;
+  playerUsername: string;
+  gamemode: string;
+  rankBefore?: string;
+  rankEarned: string;
+  submittedAt: string;
+}
+
+function readArray<T>(file: string): T[] {
+  const p = join(DATA_DIR, file);
+  if (!existsSync(p)) return [];
+  try {
+    const parsed = JSON.parse(readFileSync(p, "utf-8"));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+
+export function logTest(entry: TestLogEntry) {
+  const data = readArray<TestLogEntry>("testlog.json");
+  data.unshift(entry);
+  writeJson("testlog.json", data.slice(0, 10_000));
+}
+
+export function getTestLog(): TestLogEntry[] {
+  return readArray<TestLogEntry>("testlog.json");
+}
+
+// ── Appeals ────────────────────────────────────────────────────────────────────
+export interface AppealEntry {
+  id: string;
+  userId: string;
+  minecraftUsername: string;
+  gamemode: string;
+  reason: string;
+  evidence: string;
+  previousTier?: string;
+  desiredTier?: string;
+  status: "pending" | "approved" | "denied";
+  reviewedBy?: string;
+  reviewedAt?: string;
+  messageId?: string;
+  channelId?: string;
+  createdAt: string;
+}
+
+export function addAppeal(appeal: Omit<AppealEntry, "id" | "status" | "createdAt">): AppealEntry {
+  const arr = readArray<AppealEntry>("appeals.json");
+  const entry: AppealEntry = {
+    ...appeal,
+    id: `ap_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    status: "pending",
+    createdAt: new Date().toISOString(),
+  };
+  arr.unshift(entry);
+  writeJson("appeals.json", arr.slice(0, 1_000));
+  return entry;
+}
+
+export function getAppeal(id: string): AppealEntry | null {
+  return readArray<AppealEntry>("appeals.json").find(a => a.id === id) ?? null;
+}
+
+export function updateAppeal(id: string, updates: Partial<AppealEntry>): boolean {
+  const arr = readArray<AppealEntry>("appeals.json");
+  const idx = arr.findIndex(a => a.id === id);
+  if (idx === -1) return false;
+  arr[idx] = { ...arr[idx], ...updates };
+  writeJson("appeals.json", arr);
+  return true;
+}

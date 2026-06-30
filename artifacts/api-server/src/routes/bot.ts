@@ -192,6 +192,35 @@ router.get("/bot/gamemodes", requireBotKey, async (req, res) => {
   }
 });
 
+router.get("/bot/activity", requireBotKey, async (req, res) => {
+  try {
+    const limit = Math.min(20, parseInt(String(req.query.limit || "10")));
+    const results = await db.select({
+      username: playersTable.minecraftUsername,
+      tier:     rankingsTable.tier,
+      points:   rankingsTable.points,
+      gamemodeName: gamemodesTable.name,
+      updatedAt:    rankingsTable.updatedAt,
+    })
+      .from(rankingsTable)
+      .innerJoin(playersTable,   eq(rankingsTable.playerId,    playersTable.id))
+      .innerJoin(gamemodesTable, eq(rankingsTable.gamemodeId,  gamemodesTable.id))
+      .orderBy(desc(rankingsTable.updatedAt))
+      .limit(limit);
+
+    res.json(results.map(r => ({
+      username:  r.username,
+      tier:      r.tier,
+      points:    r.points,
+      gamemode:  r.gamemodeName,
+      updatedAt: r.updatedAt.toISOString(),
+    })));
+  } catch (err) {
+    logger.error({ err }, "Bot: activity error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // ── Admin: API key management ─────────────────────────────────────────────────
 
 router.get("/api-keys", requireAuth, requireAdmin, async (_req, res) => {
